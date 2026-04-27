@@ -1,0 +1,264 @@
+.py-32{
+    padding-top: 8rem !important;
+    padding-bottom: 8rem !important;
+}
+
+.navs{
+    border-radius: 10px;
+}
+
+.my-card{
+    transition: all 0.3s ease;
+    font-size: 10px;
+}
+
+.my-card h3{
+    font-size: 20px;
+}
+
+.my-card p{
+    font-size: 14px;
+}
+
+.my-card-item{
+    border-radius: 50px;
+}
+
+.my-card:hover {
+    transform: scale(1.1);
+     box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+}
+
+.course-item{
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.course-item:hover{
+    transform: scale(1.1);
+}
+.overlap-avatar:hover {
+  transform: scale(1.2);
+  z-index: 10; /* pour que l'image hover soit au-dessus */
+}
+
+.testimontials{
+    background-color: rgba(0, 0, 234, 0.349);
+    border-radius: 50px !important;
+}
+.pTest{
+    color: gray;
+    font-size: 15px;
+}
+.btn1{
+    border-radius: 100px;
+}
+.team-card {
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.team-card:hover {
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.team-img {
+  transition: transform 0.3s ease;
+}
+
+.team-card:hover .team-img {
+  transform: scale(1.05);
+}
+
+/* OVERLAY */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+  opacity: 0;
+  transition: 0.3s;
+}
+
+.team-card:hover .overlay {
+  opacity: 1;
+}
+
+/* ICON BUTTON */
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar {
+  width: 260px;
+  height: 100vh;
+  position: fixed;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Logo */
+.sidebar .logo {
+  padding: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Menu */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  margin: 4px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.menu-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.menu-item.active {
+  background: #3b82f6;
+}
+
+/* User */
+.sidebar .user {
+  padding: 15px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.topbar {
+  background: white;
+  border-radius: 14px;
+  padding: 15px 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+/* Search */
+.search-input {
+  width: 260px;
+  border-radius: 20px;
+  border: 1px solid #eee;
+  padding: 8px 15px;
+}
+.main-content {
+  margin-left: 260px;
+  padding: 20px;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+.stat-card {
+  border: none;
+  border-radius: 18px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+}
+
+.stat-card h3 {
+  font-weight: 700;
+}
+
+.stat-card p {
+  color: #6b7280;
+}
+.card-blue {
+  background: #e0f2fe;
+}
+
+.card-green {
+  background: #dcfce7;
+}
+
+.card-orange {
+  background: #ffedd5;
+}
+
+.card-purple {
+  background: #f3e8ff;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px; /* 🔥 plus grand */
+  margin: 6px 12px;
+  border-radius: 16px; /* 🔥 plus arrondi */
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+/* HOVER */
+.menu-item:hover {
+  background: rgba(255,255,255,0.06);
+  color: white;
+}
+
+/* ✅ ACTIVE EXACT */
+.menu-item.active {
+  background: linear-gradient(135deg, #6FAEF7, #4A90E2); /* 🔥 bleu doux */
+  color: white !important;
+  font-weight: 500;
+  box-shadow: 0 6px 15px rgba(74,144,226,0.3); /* 🔥 glow */
+}
+
+/* ICON */
+.menu-item svg {
+  color: rgba(255,255,255,0.6);
+  transition: 0.3s;
+}
+
+/* ICON ACTIVE */
+.menu-item.active svg {
+  color: white;
+}
+
+/* BADGE */
+.menu-badge {
+  margin-left: auto;
+  background: #FF8A00;
+  color: white;
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+.sidebar-menu {
+  padding-top: 12px;
+}
+.sidebar {
+  padding-top: 10px;
+}
+.stat-card {
+  border-radius: 16px;
+}
+
+.icon-box {
+  width: 35px;
+  height: 35px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hover-box:hover {
+  background: #f8f9fa;
+  cursor: pointer;
+}
