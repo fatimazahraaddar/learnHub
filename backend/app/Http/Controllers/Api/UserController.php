@@ -99,4 +99,30 @@ class UserController extends Controller
 
         return response()->json(['message' => 'User deleted']);
     }
+
+    public function profile(Request $request): JsonResponse
+{
+    return response()->json($request->user());
+}
+
+public function updateProfile(Request $request): JsonResponse
+{
+    $user = $request->user();
+    
+    $validated = $request->validate([
+        'name'     => ['sometimes', 'string', 'max:255'],
+        'email'    => ['sometimes', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+        'phone'    => ['nullable', 'string', 'max:50'],
+        'location' => ['nullable', 'string', 'max:255'],
+        'bio'      => ['nullable', 'string'],
+        'linkedin' => ['nullable', 'string', 'max:255'],
+        'twitter'  => ['nullable', 'string', 'max:255'],
+        'github'   => ['nullable', 'string', 'max:255'],
+        'image'    => ['nullable', 'string'],
+    ]);
+
+    $user->update($validated);
+
+    return response()->json($user->fresh());
+}
 }

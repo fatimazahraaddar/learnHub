@@ -50,12 +50,7 @@ const LEARNER_ITEMS = [
     path: "/learner/certificates",
     icon: <Award className="me-2" />,
   },
-  {
-    label: "Messages",
-    path: "/learner/messages",
-    icon: <MessageSquare className="me-2" />,
-    badge: "5",
-  },
+
   {
     label: "Profile",
     path: "/learner/profile",
@@ -87,12 +82,6 @@ const TRAINER_ITEMS = [
     icon: <BarChart2 className="me-2" />,
   },
   {
-    label: "Messages",
-    path: "/trainer/messages",
-    icon: <MessageSquare className="me-2" />,
-    badge: "2",
-  },
-  {
     label: "Profile",
     path: "/trainer/profile",
     icon: <User className="me-2" />,
@@ -122,19 +111,9 @@ const ADMIN_ITEMS = [
     icon: <Award className="me-2" />,
   },
   {
-    label: "Payments",
-    path: "/admin/payments",
-    icon: <CreditCard className="me-2" />,
-  },
-  {
     label: "Reports",
     path: "/admin/reports",
     icon: <BarChart2 className="me-2" />,
-  },
-  {
-    label: "Messages",
-    path: "/admin/messages",
-    icon: <MessageSquare className="me-2" />,
   },
   {
     label: "Notifications",

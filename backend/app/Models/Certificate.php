@@ -16,6 +16,7 @@ class Certificate extends Model
         'code',
         'file_url',
         'issued_at',
+        'status',
     ];
 
     protected function casts(): array
@@ -34,4 +35,8 @@ class Certificate extends Model
     {
         return $this->belongsTo(Course::class);
     }
+    public function getRouteKeyName()
+{
+    return 'code';
+}
 }

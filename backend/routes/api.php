@@ -37,9 +37,14 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('auth/logout-all', [AuthController::class, 'logoutAll']);
     Route::post('uploads/images', [UploadController::class, 'image']);
 
+    // ── Profile personnel (accessible à tous les rôles) ──
+    Route::get('profile', [UserController::class, 'profile']);
+    Route::put('profile', [UserController::class, 'updateProfile']);
+
     Route::apiResource('enrollments', EnrollmentController::class);
     Route::apiResource('messages', MessageController::class);
     Route::apiResource('certificates', CertificateController::class)->only(['index', 'show']);
+    Route::put('/certificates/{id}', [CertificateController::class, 'update']);
 
     Route::middleware('role:admin')->group(function (): void {
         Route::apiResource('users', UserController::class);

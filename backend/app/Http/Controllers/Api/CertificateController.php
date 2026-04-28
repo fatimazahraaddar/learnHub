@@ -42,6 +42,7 @@ class CertificateController extends Controller
             'code' => ['required', 'string', 'max:255', 'unique:certificates,code'],
             'file_url' => ['nullable', 'url'],
             'issued_at' => ['nullable', 'date'],
+            'status' => ['nullable', 'string', Rule::in(['valid', 'pending', 'revoked'])],
         ]);
 
         $certificate = Certificate::create($validated)->load(['user', 'course']);
@@ -72,6 +73,7 @@ class CertificateController extends Controller
             'code' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('certificates', 'code')->ignore($certificate->id)],
             'file_url' => ['nullable', 'url'],
             'issued_at' => ['nullable', 'date'],
+            'status' => ['required', 'string', Rule::in(['valid', 'pending', 'revoked'])],
         ]);
 
         $certificate->update($validated);

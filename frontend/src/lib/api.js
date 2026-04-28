@@ -156,6 +156,7 @@ function mapTestimonial(item) {
   };
 }
 
+
 function mapTeamMember(item) {
   return {
     id: Number(item?.id || 0),
@@ -370,12 +371,16 @@ export async function logoutUser() {
   clearStoredUser();
 }
 
-export async function fetchProfile(_role, accountId) {
-  const { ok, data } = await apiRequest(`users/${accountId}`);
+export async function fetchProfile() {
+  const { ok, data } = await apiRequest("profile");
+
   if (!ok || !data) {
     return {
       ok,
-      data: { status: false, message: data?.message || "Profile not found" },
+      data: {
+        status: false,
+        message: data?.message || "Profile not found",
+      },
     };
   }
 
@@ -399,16 +404,6 @@ export async function fetchProfile(_role, accountId) {
         image: data.image || "",
       },
     },
-  };
-}
-
-export async function fetchCourses() {
-  const { ok, data } = await apiRequest("courses");
-  const list = asArray(data).map(mapCourse);
-
-  return {
-    ok,
-    data: ok ? list : { status: false, message: data?.message || "Failed to load courses" },
   };
 }
 
@@ -441,62 +436,140 @@ export async function fetchSubscriptionPlans() {
   const list = asArray(data).map(mapSubscriptionPlan);
   return { ok, data: list };
 }
+export async function fetchCourses() {
+  const { ok, data } = await apiRequest("courses");
 
-export async function fetchHomePageData() {
-  const [coursesRes, categoriesRes, testimonialsRes] = await Promise.all([
-    fetchCourses(),
-    fetchPublicCategories(),
-    fetchTestimonials(),
-  ]);
-
-  const courses = Array.isArray(coursesRes.data) ? coursesRes.data : [];
-  const categories = Array.isArray(categoriesRes.data) ? categoriesRes.data : [];
-  const testimonials = Array.isArray(testimonialsRes.data) ? testimonialsRes.data : [];
-  const certificateCount = testimonials.length * 10;
-
-  const categoryUsage = courses.reduce((acc, course) => {
-    const key = String(course.category || "General");
-    acc[key] = Number(acc[key] || 0) + 1;
-    return acc;
-  }, {});
-
-  const normalizedCategories = categories.map((cat) => ({
-    ...cat,
-    count: Number(categoryUsage[cat.name] || cat.count || 0),
-  }));
-
-  const stats = [
-    {
-      label: "Active Learners",
-      value: `${Math.max(courses.reduce((sum, c) => sum + Number(c.students || 0), 0), 1).toLocaleString()}+`,
-      color: "#4A90E2",
-    },
-    {
-      label: "Courses Available",
-      value: `${courses.length.toLocaleString()}+`,
-      color: "#7F3FBF",
-    },
-    {
-      label: "Certificates Issued",
-      value: `${certificateCount.toLocaleString()}+`,
-      color: "#FF7A00",
-    },
-    {
-      label: "Completion Rate",
-      value: "87%",
-      color: "#28A745",
-    },
-  ];
+  if (!ok || !data) {
+    return {
+      ok: false,
+      data: {
+        status: false,
+        courses: [],
+        message: data?.message || "Courses not found",
+      },
+    };
+  }
 
   return {
-    ok: coursesRes.ok || categoriesRes.ok || testimonialsRes.ok,
+    ok: true,
     data: {
-      courses,
-      categories: normalizedCategories,
-      testimonials,
-      stats,
+      status: true,
+      courses: Array.isArray(data)
+        ? data.map((course) => ({
+            id: course.id || "",
+            title: course.title || "",
+            description: course.description || "",
+            instructor: course.instructor || "",
+            duration: course.duration || "",
+            level: course.level || "",
+            image: course.image || "",
+            price: course.price || "",
+            category: course.category || "",
+            students: course.students || 0,
+          }))
+        : [],
     },
   };
+}
+
+export async function fetchHomePageData() {
+  try {
+    const [coursesRes, categoriesRes, testimonialsRes] = await Promise.all([
+      fetchCourses(),
+      fetchPublicCategories(),
+      fetchTestimonials(),
+    ]);
+
+    // Sécurisation des données selon leur vraie structure
+    const courses = Array.isArray(coursesRes?.data?.courses)
+      ? coursesRes.data.courses
+      : [];
+
+    const categories = Array.isArray(categoriesRes?.data?.categories)
+      ? categoriesRes.data.categories
+      : Array.isArray(categoriesRes?.data)
+      ? categoriesRes.data
+      : [];
+
+    const testimonials = Array.isArray(testimonialsRes?.data?.testimonials)
+      ? testimonialsRes.data.testimonials
+      : Array.isArray(testimonialsRes?.data)
+      ? testimonialsRes.data
+      : [];
+
+    const certificateCount = testimonials.length * 10;
+
+    // Compter combien de cours par catégorie
+    const categoryUsage = courses.reduce((acc, course) => {
+      const key = String(course.category || "General").trim();
+
+      acc[key] = (acc[key] || 0) + 1;
+
+      return acc;
+    }, {});
+
+    // Normaliser les catégories
+    const normalizedCategories = categories.map((cat) => ({
+      ...cat,
+      count: Number(
+        categoryUsage[String(cat.name || "General").trim()] ||
+          cat.count ||
+          0
+      ),
+    }));
+
+    // Calcul des apprenants actifs
+    const totalStudents = courses.reduce(
+      (sum, course) => sum + Number(course.students || 0),
+      0
+    );
+
+    const stats = [
+      {
+        label: "Active Learners",
+        value: `${Math.max(totalStudents, 1).toLocaleString()}+`,
+        color: "#4A90E2",
+      },
+      {
+        label: "Courses Available",
+        value: `${courses.length.toLocaleString()}+`,
+        color: "#7F3FBF",
+      },
+      {
+        label: "Certificates Issued",
+        value: `${certificateCount.toLocaleString()}+`,
+        color: "#FF7A00",
+      },
+      {
+        label: "Completion Rate",
+        value: "87%",
+        color: "#28A745",
+      },
+    ];
+
+    return {
+      ok: coursesRes?.ok || categoriesRes?.ok || testimonialsRes?.ok,
+      data: {
+        status: true,
+        courses,
+        categories: normalizedCategories,
+        testimonials,
+        stats,
+      },
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      data: {
+        status: false,
+        message: error.message || "Failed to load homepage data",
+        courses: [],
+        categories: [],
+        testimonials: [],
+        stats: [],
+      },
+    };
+  }
 }
 
 export async function fetchCourseById(courseId) {
@@ -976,50 +1049,46 @@ export async function fetchLearnerDashboardData(userId) {
 }
 
 export async function fetchLearnerLessonsData(userId) {
-  const learnerCourses = await fetchLearnerCourses(userId);
-  if (!learnerCourses.ok) {
-    return {
-      ok: false,
-      data: { status: false, message: learnerCourses.data?.message || "Failed to load lessons." },
-    };
+  const { ok, data } = await apiRequest(`enrollments`);
+  if (!ok) return { ok: false, data: { status: false, message: "Failed to load enrollments." } };
+
+  const enrollments = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+  const userEnrollments = enrollments.filter(e => Number(e.user_id) === Number(userId));
+
+  if (!userEnrollments.length) {
+    return { ok: true, data: { status: true, lessons: [], course: null } };
   }
 
-  const courses = Array.isArray(learnerCourses.data) ? learnerCourses.data : [];
-  const firstCourse = courses[0];
-  if (!firstCourse?.id) {
-    return {
-      ok: true,
-      data: { status: true, lessons: [], course: null },
-    };
+  // Chercher le premier cours qui a des modules/leçons
+  let courseData = null;
+  for (const enrollment of userEnrollments) {
+    const { ok: courseOk, data: cd } = await apiRequest(`courses/${enrollment.course_id}`);
+    if (courseOk && cd && Array.isArray(cd.modules) && cd.modules.length > 0) {
+      courseData = cd;
+      break;
+    }
   }
 
-  const detailed = await fetchCourseById(firstCourse.id);
-  if (!detailed.ok || !detailed.data) {
-    return {
-      ok: false,
-      data: { status: false, message: "Failed to load course lessons." },
-    };
+  if (!courseData) {
+    return { ok: true, data: { status: true, lessons: [], course: null } };
   }
 
-  const modules = Array.isArray(detailed.data.raw?.modules) ? detailed.data.raw.modules : [];
-  const lessons = modules
+  const lessons = courseData.modules
     .flatMap((module) => (Array.isArray(module.lessons) ? module.lessons : []))
     .sort((a, b) => Number(a.position || 0) - Number(b.position || 0))
     .map((lesson, idx) => ({
-      id: Number(lesson.id || idx + 1),
-      title: lesson.title || `Lesson ${idx + 1}`,
-      duration: minutesToDuration(lesson.duration_minutes),
-      difficulty: "Medium",
-      completed: idx < 2,
-      locked: false,
-      type: lesson.video_url ? "video" : "lesson",
+      id:          Number(lesson.id || idx + 1),
+      title:       lesson.title || `Lesson ${idx + 1}`,
+      duration:    minutesToDuration(lesson.duration_minutes),
+      difficulty:  "Medium",
+      completed:   false,
+      locked:      false,
+      type:        lesson.video_url ? "video" : "lesson",
       description: lesson.content || "Course lesson content.",
+      video_url:   lesson.video_url || null,
     }));
 
-  return {
-    ok: true,
-    data: { status: true, lessons, course: detailed.data },
-  };
+  return { ok: true, data: { status: true, lessons, course: mapCourse(courseData) } };
 }
 
 export async function fetchTrainerStudentsData(trainerId = null) {
@@ -1148,7 +1217,13 @@ export async function fetchTrainerOverviewData(trainerId = null) {
     },
   };
 }
-
+export async function updateCertificateStatus(id, status) {
+  return await apiRequest(`certificates/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: status.toLowerCase() }),
+  });
+}
 export async function fetchAdminCertificatesData() {
   const { ok, data } = await apiRequest("certificates");
   if (!ok) {
@@ -1163,7 +1238,9 @@ export async function fetchAdminCertificatesData() {
     user: c.user?.name || "Unknown user",
     course: c.course?.title || `Course #${c.course_id}`,
     issued: formatDate(c.issued_at || c.created_at),
-    status: c.file_url ? "Valid" : "Pending",
+   status: c.status
+  ? c.status.charAt(0).toUpperCase() + c.status.slice(1)
+  : c.file_url ? "Valid" : "Pending",
     avatar:
       c.user?.image ||
       "https://images.unsplash.com/photo-1645664747204-31fee58898dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=100",
@@ -1409,8 +1486,8 @@ export async function saveProfile(_role, accountId, form) {
     image: form.image || "",
   };
 
-  const { ok, data } = await apiRequest(`users/${accountId}`, {
-    method: "PUT",
+  const { ok, data } = await apiRequest(`profile`, {
+  method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
