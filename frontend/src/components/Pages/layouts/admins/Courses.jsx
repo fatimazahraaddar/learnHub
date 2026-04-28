@@ -35,19 +35,42 @@ export function AdminCourses() {
   };
 
   const imagePreview = useMemo(() => {
-    if (form.image_file) return URL.createObjectURL(form.image_file);
-    return resolveCourseImage(form.image_url, form.title);
+    // 1. Ila khtariti File mn l-PC
+    if (form.image_file instanceof File) {
+      return URL.createObjectURL(form.image_file);
+    }
+
+    // 2. Ila knti f "Edit" w 3ndek tswira 9dima f l-database (path)
+    if (form.image_url && !form.image_url.startsWith('http')) {
+      // Hna khass t-zid l-base URL dyal storage dyalk
+      return `http://127.0.0.1:8000/storage/${form.image_url}`;
+    }
+
+    // 3. Ila knti dakhalti URL direct (https://...)
+    if (form.image_url) {
+      return form.image_url;
+    }
+
+    // 4. Ila makhdawch hado kamlin, rje3 l-default
+    return resolveCourseImage(null, form.title);
   }, [form.image_file, form.image_url, form.title]);
 
   useEffect(() => {
-  let cancelled = false;
-  fetchCourses().then(({ ok, data }) => {
-    if (cancelled) return;
-    if (ok && Array.isArray(data)) setCourses(data);
-    else showToast(data?.message || "Failed to load courses", "danger");
-  });
-  return () => { cancelled = true; };
-}, []);
+    let cancelled = false;
+
+    fetchCourses().then(({ ok, data }) => {
+      if (cancelled) return;
+
+      if (ok && data.courses) {
+        // Hna khassna nakhou data.courses hit api.js kiy-wrapper l-array f had l-key
+        setCourses(data.courses);
+      } else {
+        showToast(data?.message || "Failed to load courses", "danger");
+      }
+    });
+
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     return () => { if (form.image_file) URL.revokeObjectURL(imagePreview); };
@@ -88,51 +111,57 @@ export function AdminCourses() {
   };
 
   const handleSave = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!form.title || !form.description) {
-    showToast("Please fill valid title, description and price", "danger");
-    return;
-  }
+    if (!form.title || !form.description) {
+      showToast("Please fill valid title, description and price", "danger");
+      return;
+    }
 
-  setSaving(true);
-  let finalForm = { ...form };
+    setSaving(true);
+    let finalForm = { ...form };
 
-  if (form.image_file) {
-    const upload = await uploadImageFile(form.image_file);
-    if (!upload.ok || !upload.data?.url) {
-      showToast(upload.data?.message || "Image upload failed", "danger");
+    if (form.image_file) {
+      const upload = await uploadImageFile(form.image_file);
+      if (!upload.ok || !upload.data?.url) {
+        showToast(upload.data?.message || "Image upload failed", "danger");
+        setSaving(false);
+        return;
+      }
+      finalForm = { ...finalForm, image_url: upload.data.url };
+    }
+
+    if (editorMode === "add") {
+      const { ok, data: refreshed } = await fetchCourses();
+      if (ok && refreshed.courses) {
+        setCourses(refreshed.courses);
+      }
       setSaving(false);
-      return;
+      if (!ok || !data.status) {
+        showToast(data?.message || "Create failed", "danger");
+        return;
+      }
+      showToast("Course created successfully!", "success");
+    } else {
+      const { data } = await updateCourseFromForm(form.id, finalForm, null);
+      setSaving(false);
+      if (!data.status) {
+        showToast(data?.message || "Update failed", "danger");
+        return;
+      }
+      showToast("Course updated successfully", "success");
     }
-    finalForm = { ...finalForm, image_url: upload.data.url };
-  }
 
-  if (editorMode === "add") {
-    const { ok, data } = await createCourseFromForm(finalForm);
-    setSaving(false);
-    if (!ok || !data.status) {
-      showToast(data?.message || "Create failed", "danger");
-      return;
+    // Remplace loadCourses()
+    const { ok, data: refreshed } = await fetchCourses();
+    if (ok && refreshed.courses) {
+      setCourses(refreshed.courses);
     }
-    showToast("Course created successfully!", "success");
-  } else {
-    const { data } = await updateCourseFromForm(form.id, finalForm, null);
-    setSaving(false);
-    if (!data.status) {
-      showToast(data?.message || "Update failed", "danger");
-      return;
-    }
-    showToast("Course updated successfully", "success");
-  }
+    if (ok && Array.isArray(refreshed)) setCourses(refreshed);
 
-  // Remplace loadCourses()
-  const { ok, data: refreshed } = await fetchCourses();
-  if (ok && Array.isArray(refreshed)) setCourses(refreshed);
-
-  setShowEditor(false);
-  setForm(EMPTY_FORM);
-};
+    setShowEditor(false);
+    setForm(EMPTY_FORM);
+  };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this course?")) return;
@@ -259,9 +288,9 @@ export function AdminCourses() {
       <div className="row g-3 mb-4">
         {[
           { label: "Total Courses", value: courses.length, color: "#4A90E2" },
-          { label: "Published",     value: courses.length, color: "#28A745" },
-          { label: "With Image",    value: courses.filter((c) => (c.image || "").trim() !== "").length, color: "#FF7A00" },
-          { label: "No Image",      value: courses.filter((c) => !(c.image || "").trim()).length, color: "#888" },
+          { label: "Published", value: courses.length, color: "#28A745" },
+          { label: "With Image", value: courses.filter((c) => (c.image || "").trim() !== "").length, color: "#FF7A00" },
+          { label: "No Image", value: courses.filter((c) => !(c.image || "").trim()).length, color: "#888" },
         ].map((s) => (
           <div key={s.label} className="col-6 col-sm-3">
             <div className="card text-center shadow-sm border h-100">

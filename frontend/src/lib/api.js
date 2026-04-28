@@ -1,6 +1,6 @@
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
 export const LEGACY_API_BASE =
-  import.meta.env.VITE_LEGACY_API_BASE_URL || "http://localhost/Backend";
+  import.meta.env.VITE_LEGACY_API_BASE_URL || "http://localhost/backend";
 
 const USER_CHANGED_EVENT = "learnhub:user-changed";
 const USER_KEY = "user";
@@ -234,8 +234,8 @@ export async function fetchTrainerAnalytics() {
     ok,
     data: {
       totalEnrollments: Number(data?.total_enrollments ?? 0),
-      avgRating:        Number(data?.avg_rating        ?? 0),
-      totalCourses:     Number(data?.total_courses     ?? 0),
+      avgRating: Number(data?.avg_rating ?? 0),
+      totalCourses: Number(data?.total_courses ?? 0),
     },
   };
 }
@@ -464,15 +464,15 @@ export async function fetchCourses() {
     data: {
       status: true,
       courses: list.map((course) => ({
-        id:         course.id         || "",
-        title:      course.title      || "",
-        description:course.description|| "",
+        id: course.id || "",
+        title: course.title || "",
+        description: course.description || "",
         instructor: course.instructor || "",
-        duration:   course.duration   || "",
-        level:      course.level      || "",
-        image:      course.image      || "",
+        duration: course.duration || "",
+        level: course.level || "",
+        image: course.image || "",
         category: course.category?.name || course.category || "",
-        students:   course.students   || 0,
+        students: course.students || 0,
         trainer_id: course.trainer_id || course.user_id || "",
       })),
     },
@@ -495,14 +495,14 @@ export async function fetchHomePageData() {
     const categories = Array.isArray(categoriesRes?.data?.categories)
       ? categoriesRes.data.categories
       : Array.isArray(categoriesRes?.data)
-      ? categoriesRes.data
-      : [];
+        ? categoriesRes.data
+        : [];
 
     const testimonials = Array.isArray(testimonialsRes?.data?.testimonials)
       ? testimonialsRes.data.testimonials
       : Array.isArray(testimonialsRes?.data)
-      ? testimonialsRes.data
-      : [];
+        ? testimonialsRes.data
+        : [];
 
     const certificateCount = testimonials.length * 10;
 
@@ -520,8 +520,8 @@ export async function fetchHomePageData() {
       ...cat,
       count: Number(
         categoryUsage[String(cat.name || "General").trim()] ||
-          cat.count ||
-          0
+        cat.count ||
+        0
       ),
     }));
 
@@ -775,9 +775,9 @@ export async function fetchAdminDashboardData() {
 
   // ✅ Stats sans Revenue
   const stats = [
-    { label: "Users",   value: users.length.toLocaleString(),       color: "#4A90E2", bg: "#EBF4FF" },
-    { label: "Courses", value: courses.length.toLocaleString(),     color: "#7F3FBF", bg: "#F3EBFF" },
-    { label: "Active",  value: activeEnrollments.toLocaleString(),  color: "#FF7A00", bg: "#FFF3E8" },
+    { label: "Users", value: users.length.toLocaleString(), color: "#4A90E2", bg: "#EBF4FF" },
+    { label: "Courses", value: courses.length.toLocaleString(), color: "#7F3FBF", bg: "#F3EBFF" },
+    { label: "Active", value: activeEnrollments.toLocaleString(), color: "#FF7A00", bg: "#FFF3E8" },
   ];
 
   // ✅ Graphique enrollments + users par mois (sans revenue)
@@ -813,9 +813,9 @@ export async function fetchAdminDashboardData() {
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .slice(0, 8)
     .map((e) => ({
-      user:   e.user?.name       || "Unknown user",
-      course: e.course?.title    || "Unknown course",
-      date:   formatDate(e.enrolled_at || e.created_at),
+      user: e.user?.name || "Unknown user",
+      course: e.course?.title || "Unknown course",
+      date: formatDate(e.enrolled_at || e.created_at),
       status: String(e.status || "").toLowerCase() === "completed" ? "Completed" : "Active",
     }));
 
@@ -823,8 +823,8 @@ export async function fetchAdminDashboardData() {
   const trainerCount = users.filter((u) => String(u.role) === "trainer").length;
   const alerts = [];
   if (trainerCount === 0) alerts.push({ type: "warning", message: "No trainer assigned yet." });
-  if (courses.length === 0) alerts.push({ type: "danger",  message: "No courses available." });
-  if (alerts.length === 0)  alerts.push({ type: "success", message: "All systems operational." });
+  if (courses.length === 0) alerts.push({ type: "danger", message: "No courses available." });
+  if (alerts.length === 0) alerts.push({ type: "success", message: "All systems operational." });
 
   return {
     ok: true,
@@ -977,8 +977,8 @@ export async function fetchLearnerDashboardData(userId) {
 
   const progressBase = courses.length
     ? Math.round(
-        courses.reduce((sum, c) => sum + Number(c.raw?.pivot?.progress || 0), 0) / courses.length
-      )
+      courses.reduce((sum, c) => sum + Number(c.raw?.pivot?.progress || 0), 0) / courses.length
+    )
     : 0;
 
   const stats = {
@@ -1037,15 +1037,15 @@ export async function fetchLearnerLessonsData(userId) {
     .flatMap((module) => (Array.isArray(module.lessons) ? module.lessons : []))
     .sort((a, b) => Number(a.position || 0) - Number(b.position || 0))
     .map((lesson, idx) => ({
-      id:          Number(lesson.id || idx + 1),
-      title:       lesson.title || `Lesson ${idx + 1}`,
-      duration:    minutesToDuration(lesson.duration_minutes),
-      difficulty:  "Medium",
-      completed:   false,
-      locked:      false,
-      type:        lesson.video_url ? "video" : "lesson",
+      id: Number(lesson.id || idx + 1),
+      title: lesson.title || `Lesson ${idx + 1}`,
+      duration: minutesToDuration(lesson.duration_minutes),
+      difficulty: "Medium",
+      completed: false,
+      locked: false,
+      type: lesson.video_url ? "video" : "lesson",
       description: lesson.content || "Course lesson content.",
-      video_url:   lesson.video_url || null,
+      video_url: lesson.video_url || null,
     }));
 
   return { ok: true, data: { status: true, lessons, course: mapCourse(courseData) } };
@@ -1082,23 +1082,23 @@ export async function fetchTrainerStudentsData(trainerId = null) {
     const status = progress === 100 ? "Completed" : progress < 30 ? "At Risk" : "Active";
 
     return {
-      id:       Number(e.id),
-      name:     e.user?.name  || "Unnamed",
-      email:    e.user?.email || "",
-      course:   e.course?.title || "Unknown Course",
+      id: Number(e.id),
+      name: e.user?.name || "Unnamed",
+      email: e.user?.email || "",
+      course: e.course?.title || "Unknown Course",
       progress,
-      joined:   formatDate(e.enrolled_at || e.created_at),
+      joined: formatDate(e.enrolled_at || e.created_at),
       status,
-      avatar:   e.user?.image ||
+      avatar: e.user?.image ||
         "https://images.unsplash.com/photo-1645664747204-31fee58898dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=100",
     };
   });
 
   const summary = {
-    total:     students.length,
-    active:    students.filter((s) => s.status === "Active").length,
+    total: students.length,
+    active: students.filter((s) => s.status === "Active").length,
     completed: students.filter((s) => s.status === "Completed").length,
-    atRisk:    students.filter((s) => s.status === "At Risk").length,
+    atRisk: students.filter((s) => s.status === "At Risk").length,
   };
 
   return { ok: true, data: { status: true, students, summary } };
@@ -1130,9 +1130,9 @@ export async function fetchTrainerOverviewData(trainerId = null) {
   const rating =
     courses.length > 0
       ? (
-          courses.reduce((sum, c) => sum + Number(c.rating || 4.5), 0) /
-          courses.length
-        ).toFixed(1)
+        courses.reduce((sum, c) => sum + Number(c.rating || 4.5), 0) /
+        courses.length
+      ).toFixed(1)
       : "0.0";
 
   const byMonth = {};
@@ -1202,9 +1202,9 @@ export async function fetchAdminCertificatesData() {
     user: c.user?.name || "Unknown user",
     course: c.course?.title || `Course #${c.course_id}`,
     issued: formatDate(c.issued_at || c.created_at),
-   status: c.status
-  ? c.status.charAt(0).toUpperCase() + c.status.slice(1)
-  : c.file_url ? "Valid" : "Pending",
+    status: c.status
+      ? c.status.charAt(0).toUpperCase() + c.status.slice(1)
+      : c.file_url ? "Valid" : "Pending",
     avatar:
       c.user?.image ||
       "https://images.unsplash.com/photo-1645664747204-31fee58898dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=100",
@@ -1231,8 +1231,8 @@ export async function fetchAdminReportsData() {
     return { ok: false, data: null };
   }
 
-  const users       = asArray(usersRes.data);
-  const courses     = asArray(coursesRes.data);
+  const users = asArray(usersRes.data);
+  const courses = asArray(coursesRes.data);
   const enrollments = asArray(enrollmentsRes.data);
 
   // ✅ Enrollments par catégorie (sans revenue)
@@ -1270,12 +1270,12 @@ export async function fetchAdminReportsData() {
   const geoData = [
     { country: "Learners", users: users.filter((u) => u.role === "learner").length, color: "#4A90E2" },
     { country: "Trainers", users: users.filter((u) => u.role === "trainer").length, color: "#7F3FBF" },
-    { country: "Admins",   users: users.filter((u) => u.role === "admin").length,   color: "#FF7A00" },
+    { country: "Admins", users: users.filter((u) => u.role === "admin").length, color: "#FF7A00" },
   ];
 
   // ✅ KPIs sans revenue
   const kpis = {
-    newUsers:    users.length,
+    newUsers: users.length,
     enrollments: enrollments.length,
     rating: courses.length > 0
       ? (courses.reduce((sum, c) => sum + Number(c.rating || 0), 0) / courses.length).toFixed(1)
@@ -1300,48 +1300,48 @@ export async function fetchAdminNotificationsData() {
     return { ok: false, data: null };
   }
 
-  const courses      = asArray(coursesRes.data);
-  const users        = asArray(usersRes.data);
-  const enrollments  = asArray(enrollmentsRes.data);
+  const courses = asArray(coursesRes.data);
+  const users = asArray(usersRes.data);
+  const enrollments = asArray(enrollmentsRes.data);
   const certificates = asArray(certificatesRes.data);
 
   const notifications = [
     ...courses.slice(0, 3).map((c) => ({
-      id:      `course-${c.id}`,
-      type:    "info",
-      title:   "New Course Published",
+      id: `course-${c.id}`,
+      type: "info",
+      title: "New Course Published",
       message: `${c.title || "A course"} is now available.`,
-      time:    formatDate(c.created_at),
-      read:    false,
+      time: formatDate(c.created_at),
+      read: false,
     })),
     ...users.slice(0, 3).map((u) => ({
-      id:      `user-${u.id}`,
-      type:    "success",
-      title:   "New User Registered",
+      id: `user-${u.id}`,
+      type: "success",
+      title: "New User Registered",
       message: `${u.name || "A user"} joined as ${startCaseRole(u.role)}.`,
-      time:    formatDate(u.created_at),
-      read:    false,
+      time: formatDate(u.created_at),
+      read: false,
     })),
     ...enrollments.slice(0, 2).map((e) => ({
-      id:      `enroll-${e.id}`,
-      type:    "warning",
-      title:   "New Enrollment",
+      id: `enroll-${e.id}`,
+      type: "warning",
+      title: "New Enrollment",
       message: `${e.user?.name || "A learner"} enrolled in ${e.course?.title || "a course"}.`,
-      time:    formatDate(e.created_at || e.enrolled_at),
-      read:    false,
+      time: formatDate(e.created_at || e.enrolled_at),
+      read: false,
     })),
     ...certificates.slice(0, 2).map((c) => ({
-      id:      `cert-${c.id}`,
-      type:    "success",
-      title:   "Certificate Issued",
+      id: `cert-${c.id}`,
+      type: "success",
+      title: "Certificate Issued",
       message: `Certificate ${c.code || c.id} generated.`,
-      time:    formatDate(c.created_at || c.issued_at),
-      read:    false,
+      time: formatDate(c.created_at || c.issued_at),
+      read: false,
     })),
   ]
-  // ✅ Trier par date décroissante
-  .sort((a, b) => new Date(b.time) - new Date(a.time))
-  .slice(0, 12);
+    // ✅ Trier par date décroissante
+    .sort((a, b) => new Date(b.time) - new Date(a.time))
+    .slice(0, 12);
 
   return { ok: true, data: { status: true, notifications } };
 }
@@ -1423,24 +1423,31 @@ export async function uploadImageFile(file) {
   };
 }
 
+// 
+
 export async function saveProfile(_role, accountId, form) {
   const fullName = `${form.firstName || ""} ${form.lastName || ""}`.trim();
-  const payload = {
-    name: fullName || "User",
-    email: form.email || "",
-    phone: form.phone || "",
-    location: form.location || "",
-    bio: form.bio || "",
-    linkedin: form.linkedin || "",
-    twitter: form.twitter || "",
-    github: form.github || "",
-    image: form.image || "",
-  };
+
+  const formData = new FormData();
+
+  formData.append('_method', 'PUT');
+
+  formData.append('name', fullName || "User");
+  formData.append('email', form.email || "");
+  formData.append('phone', form.phone || "");
+  formData.append('location', form.location || "");
+  formData.append('bio', form.bio || "");
+  formData.append('linkedin', form.linkedin || "");
+  formData.append('twitter', form.twitter || "");
+  formData.append('github', form.github || "");
+
+  if (form.image && form.image instanceof File) {
+    formData.append('image', form.image);
+  }
 
   const { ok, data } = await apiRequest(`profile`, {
-  method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    method: "POST", // POST + _method: PUT is more stable for uploads
+    body: formData,
   });
 
   if (!ok || !data) {
@@ -1465,9 +1472,9 @@ export async function saveProfile(_role, accountId, form) {
   };
 
   mergeStoredUser({
-    name: data.name || payload.name,
-    email: data.email || payload.email,
-    image: data.image || payload.image,
+    name: data.name,
+    email: data.email,
+    image: data.image,
   });
 
   return { ok: true, data: { status: true, profile } };
@@ -1488,7 +1495,7 @@ export function clearStoredUser() {
 }
 
 export function subscribeUserChanges(callback) {
-  if (typeof window === "undefined") return () => {};
+  if (typeof window === "undefined") return () => { };
 
   const handler = () => callback(getUserDisplayData());
   const storageHandler = (e) => {

@@ -4,41 +4,41 @@ import { fetchProfile, getUserDisplayData, mergeStoredUser, saveProfile } from "
 
 const INFO_FIELDS = [
   { label: "First Name", key: "firstName", Icon: Shield },
-  { label: "Last Name",  key: "lastName",  Icon: Shield },
-  { label: "Email",      key: "email",     Icon: Mail   },
-  { label: "Phone",      key: "phone",     Icon: Phone  },
-  { label: "Location",   key: "location",  Icon: MapPin },
+  { label: "Last Name", key: "lastName", Icon: Shield },
+  { label: "Email", key: "email", Icon: Mail },
+  { label: "Phone", key: "phone", Icon: Phone },
+  { label: "Location", key: "location", Icon: MapPin },
 ];
 
 const SOCIAL_FIELDS = [
-  { key: "linkedin", Icon: Linkedin, placeholder: "LinkedIn URL"    },
-  { key: "twitter",  Icon: Twitter,  placeholder: "Twitter / X URL" },
-  { key: "github",   Icon: Github,   placeholder: "GitHub URL"      },
+  { key: "linkedin", Icon: Linkedin, placeholder: "LinkedIn URL" },
+  { key: "twitter", Icon: Twitter, placeholder: "Twitter / X URL" },
+  { key: "github", Icon: Github, placeholder: "GitHub URL" },
 ];
 
 const EMPTY_FORM = {
   firstName: "",
-  lastName:  "",
-  email:     "",
+  lastName: "",
+  email: "",
   roleTitle: "Platform Administrator",
-  bio:       "",
-  location:  "",
-  phone:     "",
-  linkedin:  "",
-  twitter:   "",
-  github:    "",
-  image:     "",
+  bio: "",
+  location: "",
+  phone: "",
+  linkedin: "",
+  twitter: "",
+  github: "",
+  image: "",
 };
 
 export function AdminProfile() {
   const imageInputRef = useRef(null);
-  const user          = getUserDisplayData();
+  const user = getUserDisplayData();
 
-  const [form, setForm]                   = useState(EMPTY_FORM);
-  const [loading, setLoading]             = useState(true);
-  const [saving, setSaving]               = useState(false);
-  const [saved, setSaved]                 = useState(false);
-  const [error, setError]                 = useState("");
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
@@ -64,10 +64,14 @@ export function AdminProfile() {
   const handleImageFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    setForm(prev => ({ ...prev, imageFile: file }));
+
     const reader = new FileReader();
     reader.onload = () => {
-      if (typeof reader.result === "string")
-        handleChange("image", reader.result);
+      if (typeof reader.result === "string") {
+        setForm(prev => ({ ...prev, imagePreview: reader.result }));
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -76,21 +80,44 @@ export function AdminProfile() {
     setSaving(true);
     setError("");
     setStatusMessage("");
-    const { ok, data } = await saveProfile(null, null, form);
+
+    const submissionData = {
+      firstName: form.firstName,
+      lastName: form.lastName,
+      email: form.email,
+      phone: form.phone,
+      location: form.location,
+      bio: form.bio,
+      linkedin: form.linkedin,
+      twitter: form.twitter,
+      github: form.github,
+      image: form.imageFile instanceof File ? form.imageFile : null
+    };
+
+    const { ok, data } = await saveProfile(null, null, submissionData);
+
     setSaving(false);
+
     if (!ok || !data?.status) {
-      setError(data?.message || "Save failed.");
+      setError(data?.message || "Validation Error. Check your data.");
       return;
     }
-    if (data.profile) setForm((prev) => ({ ...prev, ...data.profile }));
-    mergeStoredUser({ name: `${form.firstName} ${form.lastName}`.trim(), email: form.email, image: form.image });
-    setStatusMessage("Profile updated successfully.");
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1600);
-  };
 
+    if (data.profile) {
+      setForm((prev) => ({
+        ...prev,
+        ...data.profile,
+        imagePreview: null,
+        imageFile: null
+      }));
+    }
+
+    setStatusMessage("Profile updated successfully!");
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
   const initials = (form.firstName || user.firstName || "A").charAt(0).toUpperCase();
-  const fullName  = `${form.firstName} ${form.lastName}`.trim() || user.fullName;
+  const fullName = `${form.firstName} ${form.lastName}`.trim() || user.fullName;
 
   if (loading) return (
     <div className="text-center py-5">
@@ -102,7 +129,7 @@ export function AdminProfile() {
   return (
     <div className="container my-4">
 
-      {error         && <div className="alert alert-danger  py-2">{error}</div>}
+      {error && <div className="alert alert-danger  py-2">{error}</div>}
       {statusMessage && <div className="alert alert-success py-2">{statusMessage}</div>}
 
       <div className="card shadow-sm mb-4">
@@ -111,9 +138,9 @@ export function AdminProfile() {
           <div className="d-flex justify-content-between align-items-end">
 
             <div className="position-relative" style={{ marginTop: -50 }}>
-              {form.image ? (
+              {(form.imagePreview || form.image) ? (
                 <img
-                  src={form.image}
+                  src={`http://localhost:8000/storage/${form.image ?? form.imagePreview}`}
                   width={100} height={100}
                   className="rounded-circle border border-3 border-white object-fit-cover"
                   alt="profile"

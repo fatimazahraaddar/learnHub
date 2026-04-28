@@ -15,7 +15,7 @@ class CourseController extends Controller
      */
     public function index(): JsonResponse
     {
-        $courses = Course::with(['category', 'trainer'])->latest()->paginate(15);
+        $courses = Course::with(['category', 'trainer'])->latest()->limit(30)->get();
 
         return response()->json($courses);
     }
