@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { DashboardSidebar } from "../Pages/DashboardSidebar";
+import DashboardSidebar from "../Pages/DashboardSidebar";
 import { DashboardTopbar } from "../Pages/DashboardTopbar";
 import {
   LayoutDashboard,
@@ -39,12 +39,12 @@ const LEARNER_ITEMS = [
     path: "/learner/lessons",
     icon: <PlayCircle className="me-2" />,
   },
-  {
-    label: "Discussion",
-    path: "/learner/discussion",
-    icon: <MessageSquare className="me-2" />,
-    badge: "3",
-  },
+{
+  label: "Discussion",
+  path: "/learner/discussion",
+  icon: <MessageSquare className="me-2" />,
+  // ✅ badge statique supprimé
+},
   {
     label: "Certificates",
     path: "/learner/certificates",
@@ -115,12 +115,12 @@ const ADMIN_ITEMS = [
     path: "/admin/reports",
     icon: <BarChart2 className="me-2" />,
   },
-  {
-    label: "Notifications",
-    path: "/admin/notifications",
-    icon: <Bell className="me-2" />,
-    badge: "12",
-  },
+{
+  label: "Notifications",
+  path: "/admin/notifications",
+  icon: <Bell className="me-2" />,
+  // ✅ badge statique supprimé
+},
   {
     label: "Settings",
     path: "/admin/settings",

@@ -15,9 +15,10 @@ export function TrainerStudents() {
   const [search, setSearch] = useState("");
   const [atRiskOnly, setAtRiskOnly] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     const load = async () => {
       const user = getStoredUser();
+      console.log("storedUser:", user); // 👈
       const { ok, data } = await fetchTrainerStudentsData(user?.id || null);
       if (!ok || !data?.status) return;
       setStudents(Array.isArray(data.students) ? data.students : []);

@@ -6,6 +6,44 @@ import {
   fetchProfile, getStoredUser, getUserDisplayData, mergeStoredUser, saveProfile, apiRequest,
 } from "../../../../lib/api";
 
+ export const Skills = () => {
+  const [skills, setSkills] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const response = await fetch("/api/skills"); // 👈 adaptez l'URL
+        const data = await response.json();
+        setSkills(data);
+      } catch {
+  setError("Erreur lors du chargement des skills");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSkills();
+  }, []);
+
+  if (loading) return <div className="card mb-4"><div className="card-body">Chargement...</div></div>;
+  if (error) return <div className="card mb-4"><div className="card-body text-danger">{error}</div></div>;
+
+  return (
+    <div className="card mb-4">
+      <div className="card-body">
+        <h5 className="mb-3">Skills</h5>
+        <div className="d-flex flex-wrap gap-2">
+          {skills.map((skill) => (
+            <span key={skill} className="badge bg-primary">{skill}</span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export function LearnerProfile() {
   const imageInputRef = useRef(null);
   const user = getUserDisplayData();
@@ -220,16 +258,6 @@ export function LearnerProfile() {
             </div>
           </div>
 
-          <div className="card mb-4">
-            <div className="card-body">
-              <h5 className="mb-3">Skills</h5>
-              <div className="d-flex flex-wrap gap-2">
-                {["HTML/CSS", "JavaScript", "React", "Python", "SEO", "UI Design"].map((skill) => (
-                  <span key={skill} className="badge bg-primary">{skill}</span>
-                ))}
-              </div>
-            </div>
-          </div>
 
           <div className="card text-white" style={{ background: "linear-gradient(135deg,#4A90E2,#7F3FBF)" }}>
             <div className="card-body">

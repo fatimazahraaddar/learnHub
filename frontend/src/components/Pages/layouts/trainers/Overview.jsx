@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
-import { Users, BookOpen, DollarSign, Star } from "lucide-react";
+import { Users, BookOpen, Star } from "lucide-react";
 import { fetchTrainerOverviewData, getStoredUser } from "../../../../lib/api";
 import { resolveCourseImage } from "../../../../lib/courseImage";
 
@@ -8,7 +8,7 @@ const PIE_COLORS = ["#4A90E2", "#7F3FBF", "#FF7A00", "#28A745", "#EF4444"];
 
 export function TrainerOverview() {
   const [overview, setOverview] = useState({
-    stats: { students: 0, courses: 0, earnings: 0, rating: "0.0" },
+    stats: { students: 0, courses: 0, rating: "0.0" },
     trend: [],
     myCourses: [],
     recentStudents: [],
@@ -16,12 +16,15 @@ export function TrainerOverview() {
 
   useEffect(() => {
     const load = async () => {
-      const user = getStoredUser();
-      const { ok, data } = await fetchTrainerOverviewData(user?.id || null);
-      if (!ok || !data?.status) return;
-      setOverview(data);
+      try {
+        const user = getStoredUser();
+        const { ok, data } = await fetchTrainerOverviewData(user?.id || null);
+        if (!ok || !data?.status) return;
+        setOverview(data);
+      } catch {
+        console.error("Failed to load trainer overview");
+      }
     };
-
     load();
   }, []);
 
@@ -31,7 +34,6 @@ export function TrainerOverview() {
       const key = course.category || "General";
       map[key] = Number(map[key] || 0) + 1;
     });
-
     return Object.entries(map).map(([name, value], idx) => ({
       name,
       value,
@@ -43,12 +45,11 @@ export function TrainerOverview() {
     <div className="container-fluid py-4">
       <div className="row g-3 mb-4">
         {[
-          { icon: Users, label: "Students", value: overview.stats.students, color: "#4A90E2" },
-          { icon: BookOpen, label: "Courses", value: overview.stats.courses, color: "#7F3FBF" },
-          { icon: DollarSign, label: "Earnings", value: `$${Number(overview.stats.earnings || 0).toFixed(2)}`, color: "#28A745" },
-          { icon: Star, label: "Rating", value: overview.stats.rating, color: "#FF7A00" },
+          { icon: Users,    label: "Students", value: overview.stats.students, color: "#4A90E2" },
+          { icon: BookOpen, label: "Courses",  value: overview.stats.courses,  color: "#7F3FBF" },
+          { icon: Star,     label: "Rating",   value: overview.stats.rating,   color: "#FF7A00" },
         ].map((stat, i) => (
-          <div key={i} className="col-md-6 col-lg-3">
+          <div key={i} className="col-md-6 col-lg-4">
             <div className="card p-3 shadow-sm">
               <stat.icon size={25} style={{ color: stat.color }} />
               <h4 className="mt-2">{stat.value}</h4>
@@ -107,32 +108,51 @@ export function TrainerOverview() {
         <div className="col-lg-6">
           <div className="card p-3 shadow-sm">
             <h5>My Courses</h5>
-            {overview.myCourses.map((course) => (
-              <div key={course.id} className="d-flex align-items-center mb-3">
-                <img src={resolveCourseImage(course.image, course.title)} width="50" className="me-3 rounded" alt="course" />
-                <div className="flex-grow-1">
-                  <p className="mb-0">{course.title}</p>
-                  <small className="text-muted">{course.students} students</small>
+            {overview.myCourses.length > 0 ? (
+              overview.myCourses.map((course) => (
+                <div key={course.id} className="d-flex align-items-center mb-3">
+                  <img
+                    src={resolveCourseImage(course.image, course.title)}
+                    width="50"
+                    className="me-3 rounded"
+                    alt={course.title}
+                    onError={(e) => { e.target.src = "https://placehold.co/50x50?text=N/A"; }}
+                  />
+                  <div className="flex-grow-1">
+                    <p className="mb-0">{course.title}</p>
+                    <small className="text-muted">{course.students} students</small>
+                  </div>
                 </div>
-                <span className="text-success">${course.price}</span>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-muted small mb-0">No courses yet.</p>
+            )}
           </div>
         </div>
 
         <div className="col-lg-6">
           <div className="card p-3 shadow-sm">
             <h5>Recent Students</h5>
-            {overview.recentStudents.map((s, i) => (
-              <div key={i} className="d-flex align-items-center mb-3">
-                <img src={s.avatar} width="40" className="rounded-circle me-3" alt={s.name} />
-                <div className="flex-grow-1">
-                  <p className="mb-0">{s.name}</p>
-                  <small className="text-muted">{s.course}</small>
+            {overview.recentStudents.length > 0 ? (
+              overview.recentStudents.map((s) => (
+                <div key={s.id ?? s.name} className="d-flex align-items-center mb-3">
+                  <img
+                    src={s.avatar}
+                    width="40"
+                    className="rounded-circle me-3"
+                    alt={s.name}
+                    onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}`; }}
+                  />
+                  <div className="flex-grow-1">
+                    <p className="mb-0">{s.name}</p>
+                    <small className="text-muted">{s.course}</small>
+                  </div>
+                  <span>{s.progress}%</span>
                 </div>
-                <span>{s.progress}%</span>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-muted small mb-0">No recent students.</p>
+            )}
           </div>
         </div>
       </div>

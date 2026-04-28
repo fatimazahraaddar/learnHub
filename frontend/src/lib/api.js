@@ -73,7 +73,7 @@ export async function postMultipart(path, payload) {
   return { ok: response.ok, data };
 }
 
-async function apiRequest(path, options = {}) {
+export async function apiRequest(path, options = {}) {
   const response = await fetch(buildUrl(API_BASE, path), {
     ...options,
     headers: {
@@ -228,6 +228,17 @@ function parseDurationToMinutes(value) {
 
   return 0;
 }
+export async function fetchTrainerAnalytics() {
+  const { ok, data } = await apiRequest("analytics/trainer");
+  return {
+    ok,
+    data: {
+      totalEnrollments: Number(data?.total_enrollments ?? 0),
+      avgRating:        Number(data?.avg_rating        ?? 0),
+      totalCourses:     Number(data?.total_courses     ?? 0),
+    },
+  };
+}
 
 async function fetchAllCategories() {
   const { ok, data } = await apiRequest("categories");
@@ -367,8 +378,8 @@ export async function logoutUser() {
   if (token) {
     await apiRequest("auth/logout", { method: "POST" });
   }
-
   clearStoredUser();
+  window.location.href = "/"; // ✅ recharge complète — stoppe toutes les requêtes en cours
 }
 
 export async function fetchProfile() {
@@ -442,32 +453,28 @@ export async function fetchCourses() {
   if (!ok || !data) {
     return {
       ok: false,
-      data: {
-        status: false,
-        courses: [],
-        message: data?.message || "Courses not found",
-      },
+      data: { status: false, courses: [], message: data?.message || "Courses not found" },
     };
   }
+
+  const list = asArray(data); // 👈 gère tableau direct ou { data: [...] }
 
   return {
     ok: true,
     data: {
       status: true,
-      courses: Array.isArray(data)
-        ? data.map((course) => ({
-            id: course.id || "",
-            title: course.title || "",
-            description: course.description || "",
-            instructor: course.instructor || "",
-            duration: course.duration || "",
-            level: course.level || "",
-            image: course.image || "",
-            price: course.price || "",
-            category: course.category || "",
-            students: course.students || 0,
-          }))
-        : [],
+      courses: list.map((course) => ({
+        id:         course.id         || "",
+        title:      course.title      || "",
+        description:course.description|| "",
+        instructor: course.instructor || "",
+        duration:   course.duration   || "",
+        level:      course.level      || "",
+        image:      course.image      || "",
+        category: course.category?.name || course.category || "",
+        students:   course.students   || 0,
+        trainer_id: course.trainer_id || course.user_id || "",
+      })),
     },
   };
 }
@@ -762,44 +769,20 @@ export async function fetchAdminDashboardData() {
   const courses = asArray(coursesRes.data);
   const enrollments = asArray(enrollmentsRes.data);
 
-  const revenueTotal = enrollments.reduce(
-    (sum, e) => sum + Number(e.course?.price || 0),
-    0
-  );
-
   const activeEnrollments = enrollments.filter(
     (e) => String(e.status || "").toLowerCase() === "active"
   ).length;
 
+  // ✅ Stats sans Revenue
   const stats = [
-    {
-      label: "Users",
-      value: users.length.toLocaleString(),
-      color: "#4A90E2",
-      bg: "#EBF4FF",
-    },
-    {
-      label: "Courses",
-      value: courses.length.toLocaleString(),
-      color: "#7F3FBF",
-      bg: "#F3EBFF",
-    },
-    {
-      label: "Revenue",
-      value: `$${revenueTotal.toFixed(2)}`,
-      color: "#28A745",
-      bg: "#F0FFF4",
-    },
-    {
-      label: "Active",
-      value: activeEnrollments.toLocaleString(),
-      color: "#FF7A00",
-      bg: "#FFF3E8",
-    },
+    { label: "Users",   value: users.length.toLocaleString(),       color: "#4A90E2", bg: "#EBF4FF" },
+    { label: "Courses", value: courses.length.toLocaleString(),     color: "#7F3FBF", bg: "#F3EBFF" },
+    { label: "Active",  value: activeEnrollments.toLocaleString(),  color: "#FF7A00", bg: "#FFF3E8" },
   ];
 
+  // ✅ Graphique enrollments + users par mois (sans revenue)
   const now = new Date();
-  const revenue = Array.from({ length: 6 }).map((_, idx) => {
+  const chartData = Array.from({ length: 6 }).map((_, idx) => {
     const date = new Date(now.getFullYear(), now.getMonth() - (5 - idx), 1);
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 
@@ -807,68 +790,45 @@ export async function fetchAdminDashboardData() {
       const source = e.enrolled_at || e.created_at;
       if (!source) return false;
       const d = new Date(source);
-      if (Number.isNaN(d.getTime())) return false;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      return key === monthKey;
-    });
-
-    const monthRevenue = monthEnrollments.reduce(
-      (sum, e) => sum + Number(e.course?.price || 0),
-      0
-    );
+      if (isNaN(d.getTime())) return false;
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === monthKey;
+    }).length;
 
     const monthUsers = users.filter((u) => {
       if (!u.created_at) return false;
       const d = new Date(u.created_at);
-      if (Number.isNaN(d.getTime())) return false;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      return key === monthKey;
+      if (isNaN(d.getTime())) return false;
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` === monthKey;
     }).length;
 
     return {
       month: date.toLocaleDateString([], { month: "short" }),
-      revenue: Number(monthRevenue.toFixed(2)),
+      enrollments: monthEnrollments,
       users: monthUsers,
     };
   });
 
-  const transactions = [...enrollments]
+  // ✅ Activité récente sans paiement
+  const recentActivity = [...enrollments]
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .slice(0, 8)
     .map((e) => ({
-      user: e.user?.name || "Unknown user",
-      course: e.course?.title || "Unknown course",
-      amount: Number(e.course?.price || 0).toFixed(2),
-      date: formatDate(e.enrolled_at || e.created_at),
-      status: String(e.status || "").toLowerCase() === "completed" ? "Completed" : "Pending",
+      user:   e.user?.name       || "Unknown user",
+      course: e.course?.title    || "Unknown course",
+      date:   formatDate(e.enrolled_at || e.created_at),
+      status: String(e.status || "").toLowerCase() === "completed" ? "Completed" : "Active",
     }));
 
-  const adminCount = users.filter((u) => String(u.role) === "admin").length;
+  // ✅ Alerts
   const trainerCount = users.filter((u) => String(u.role) === "trainer").length;
-
   const alerts = [];
-  if (adminCount === 0) {
-    alerts.push({ type: "warning", message: "No admin account detected." });
-  }
-  if (trainerCount === 0) {
-    alerts.push({ type: "warning", message: "No trainer assigned yet." });
-  }
-  if (courses.length === 0) {
-    alerts.push({ type: "danger", message: "No courses available on the platform." });
-  }
-  if (alerts.length === 0) {
-    alerts.push({ type: "success", message: "All systems operational." });
-  }
+  if (trainerCount === 0) alerts.push({ type: "warning", message: "No trainer assigned yet." });
+  if (courses.length === 0) alerts.push({ type: "danger",  message: "No courses available." });
+  if (alerts.length === 0)  alerts.push({ type: "success", message: "All systems operational." });
 
   return {
     ok: true,
-    data: {
-      status: true,
-      stats,
-      revenue,
-      transactions,
-      alerts,
-    },
+    data: { status: true, stats, chartData, recentActivity, alerts },
   };
 }
 
@@ -1105,10 +1065,16 @@ export async function fetchTrainerStudentsData(trainerId = null) {
   }
 
   const courses = asArray(coursesRes.data);
-  const enrollments = asArray(enrollmentsRes.data).filter((e) => {
+  const allEnrollments = asArray(enrollmentsRes.data);
+
+  console.log("trainerId reçu:", trainerId);
+  console.log("enrollment[0]:", allEnrollments[0]);
+  console.log("course[0]:", courses[0]);
+
+  const enrollments = allEnrollments.filter((e) => {
     if (!trainerId) return true;
     const course = courses.find((c) => Number(c.id) === Number(e.course_id));
-    return Number(course?.trainer_id || 0) === Number(trainerId);
+    return Number(course?.trainer_id) === Number(trainerId);
   });
 
   const students = enrollments.map((e) => {
@@ -1116,29 +1082,27 @@ export async function fetchTrainerStudentsData(trainerId = null) {
     const status = progress === 100 ? "Completed" : progress < 30 ? "At Risk" : "Active";
 
     return {
-      id: Number(e.id),
-      name: e.user?.name || "Unnamed",
-      email: e.user?.email || "",
-      course: e.course?.title || "Unknown Course",
+      id:       Number(e.id),
+      name:     e.user?.name  || "Unnamed",
+      email:    e.user?.email || "",
+      course:   e.course?.title || "Unknown Course",
       progress,
-      joined: formatDate(e.enrolled_at || e.created_at),
+      joined:   formatDate(e.enrolled_at || e.created_at),
       status,
-      avatar:
-        e.user?.image ||
+      avatar:   e.user?.image ||
         "https://images.unsplash.com/photo-1645664747204-31fee58898dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=100",
     };
   });
 
   const summary = {
-    total: students.length,
-    active: students.filter((s) => s.status === "Active").length,
+    total:     students.length,
+    active:    students.filter((s) => s.status === "Active").length,
     completed: students.filter((s) => s.status === "Completed").length,
-    atRisk: students.filter((s) => s.status === "At Risk").length,
+    atRisk:    students.filter((s) => s.status === "At Risk").length,
   };
 
   return { ok: true, data: { status: true, students, summary } };
 }
-
 export async function fetchTrainerOverviewData(trainerId = null) {
   const [coursesRes, enrollmentsRes] = await Promise.all([
     apiRequest("courses"),
@@ -1264,75 +1228,63 @@ export async function fetchAdminReportsData() {
   ]);
 
   if (!usersRes.ok || !coursesRes.ok || !enrollmentsRes.ok) {
-    return { ok: false, data: { status: false, message: "Failed to load reports." } };
+    return { ok: false, data: null };
   }
 
-  const users = asArray(usersRes.data);
-  const courses = asArray(coursesRes.data);
+  const users       = asArray(usersRes.data);
+  const courses     = asArray(coursesRes.data);
   const enrollments = asArray(enrollmentsRes.data);
 
+  // ✅ Enrollments par catégorie (sans revenue)
   const categoryMap = {};
   courses.forEach((c) => {
     const key = c.category?.name || "General";
-    if (!categoryMap[key]) categoryMap[key] = { name: key, students: 0, revenue: 0 };
+    if (!categoryMap[key]) categoryMap[key] = { name: key, students: 0 };
   });
-
   enrollments.forEach((e) => {
     const key = e.course?.category?.name || "General";
-    if (!categoryMap[key]) categoryMap[key] = { name: key, students: 0, revenue: 0 };
+    if (!categoryMap[key]) categoryMap[key] = { name: key, students: 0 };
     categoryMap[key].students += 1;
-    categoryMap[key].revenue += Number(e.course?.price || 0);
   });
-
   const categoryData = Object.values(categoryMap)
-    .sort((a, b) => b.revenue - a.revenue)
+    .sort((a, b) => b.students - a.students)
     .slice(0, 8);
 
+  // ✅ Taux de complétion par mois
   const monthMap = {};
   enrollments.forEach((e) => {
     const d = new Date(e.created_at || e.enrolled_at);
-    if (Number.isNaN(d.getTime())) return;
+    if (isNaN(d.getTime())) return;
     const month = d.toLocaleDateString([], { month: "short" });
     if (!monthMap[month]) monthMap[month] = { month, rate: 0, total: 0 };
     monthMap[month].total += 1;
-    if (String(e.status || "").toLowerCase() === "completed") {
+    if (String(e.status || "").toLowerCase() === "completed")
       monthMap[month].rate += 1;
-    }
   });
-
   const completionData = Object.values(monthMap).map((m) => ({
     month: m.month,
     rate: m.total ? Math.round((m.rate / m.total) * 100) : 0,
   }));
 
+  // ✅ Distribution par rôle
   const geoData = [
     { country: "Learners", users: users.filter((u) => u.role === "learner").length, color: "#4A90E2" },
     { country: "Trainers", users: users.filter((u) => u.role === "trainer").length, color: "#7F3FBF" },
-    { country: "Admins", users: users.filter((u) => u.role === "admin").length, color: "#FF7A00" },
+    { country: "Admins",   users: users.filter((u) => u.role === "admin").length,   color: "#FF7A00" },
   ];
 
+  // ✅ KPIs sans revenue
   const kpis = {
-    newUsers: users.length,
+    newUsers:    users.length,
     enrollments: enrollments.length,
-    revenue: enrollments.reduce((sum, e) => sum + Number(e.course?.price || 0), 0),
-    rating:
-      courses.length > 0
-        ? (
-            courses.reduce((sum, c) => sum + Number(c.rating || 4.5), 0) /
-            courses.length
-          ).toFixed(1)
-        : "0.0",
+    rating: courses.length > 0
+      ? (courses.reduce((sum, c) => sum + Number(c.rating || 0), 0) / courses.length).toFixed(1)
+      : "0.0",
   };
 
   return {
     ok: true,
-    data: {
-      status: true,
-      categoryData,
-      completionData,
-      geoData,
-      kpis,
-    },
+    data: { status: true, categoryData, completionData, geoData, kpis },
   };
 }
 
@@ -1345,55 +1297,54 @@ export async function fetchAdminNotificationsData() {
   ]);
 
   if (!coursesRes.ok || !usersRes.ok || !enrollmentsRes.ok || !certificatesRes.ok) {
-    return {
-      ok: false,
-      data: { status: false, message: "Failed to load notifications." },
-    };
+    return { ok: false, data: null };
   }
 
-  const courses = asArray(coursesRes.data);
-  const users = asArray(usersRes.data);
-  const enrollments = asArray(enrollmentsRes.data);
+  const courses      = asArray(coursesRes.data);
+  const users        = asArray(usersRes.data);
+  const enrollments  = asArray(enrollmentsRes.data);
   const certificates = asArray(certificatesRes.data);
 
   const notifications = [
-    ...courses.slice(0, 3).map((course) => ({
-      id: `course-${course.id}`,
-      type: "info",
-      title: "New Course Published",
-      message: `${course.title || "A course"} is now available.`,
-      time: formatDate(course.created_at),
-      read: false,
+    ...courses.slice(0, 3).map((c) => ({
+      id:      `course-${c.id}`,
+      type:    "info",
+      title:   "New Course Published",
+      message: `${c.title || "A course"} is now available.`,
+      time:    formatDate(c.created_at),
+      read:    false,
     })),
-    ...users.slice(0, 3).map((user) => ({
-      id: `user-${user.id}`,
-      type: "success",
-      title: "New User Registered",
-      message: `${user.name || "A user"} joined as ${startCaseRole(user.role)}.`,
-      time: formatDate(user.created_at),
-      read: false,
+    ...users.slice(0, 3).map((u) => ({
+      id:      `user-${u.id}`,
+      type:    "success",
+      title:   "New User Registered",
+      message: `${u.name || "A user"} joined as ${startCaseRole(u.role)}.`,
+      time:    formatDate(u.created_at),
+      read:    false,
     })),
-    ...enrollments.slice(0, 2).map((item) => ({
-      id: `enroll-${item.id}`,
-      type: "warning",
-      title: "New Enrollment",
-      message: `${item.user?.name || "A learner"} enrolled in ${item.course?.title || "a course"}.`,
-      time: formatDate(item.created_at || item.enrolled_at),
-      read: true,
+    ...enrollments.slice(0, 2).map((e) => ({
+      id:      `enroll-${e.id}`,
+      type:    "warning",
+      title:   "New Enrollment",
+      message: `${e.user?.name || "A learner"} enrolled in ${e.course?.title || "a course"}.`,
+      time:    formatDate(e.created_at || e.enrolled_at),
+      read:    false,
     })),
-    ...certificates.slice(0, 2).map((item) => ({
-      id: `cert-${item.id}`,
-      type: "success",
-      title: "Certificate Issued",
-      message: `Certificate ${item.code || item.id} generated.`,
-      time: formatDate(item.created_at || item.issued_at),
-      read: true,
+    ...certificates.slice(0, 2).map((c) => ({
+      id:      `cert-${c.id}`,
+      type:    "success",
+      title:   "Certificate Issued",
+      message: `Certificate ${c.code || c.id} generated.`,
+      time:    formatDate(c.created_at || c.issued_at),
+      read:    false,
     })),
-  ].slice(0, 12);
+  ]
+  // ✅ Trier par date décroissante
+  .sort((a, b) => new Date(b.time) - new Date(a.time))
+  .slice(0, 12);
 
   return { ok: true, data: { status: true, notifications } };
 }
-
 export async function fetchPlatformSettings() {
   const { ok, data } = await apiRequest("platform-settings");
   if (!ok) {

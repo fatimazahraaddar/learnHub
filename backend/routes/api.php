@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\TestimonialController;
 use App\Http\Controllers\Api\UploadController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\UserSubscriptionController;
+use App\Http\Controllers\Api\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('auth/register', [AuthController::class, 'register']);
@@ -52,8 +53,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::put('platform-settings', [PlatformSettingController::class, 'update']);
     });
 
+
     Route::middleware('role:admin,trainer')->group(function (): void {
         Route::apiResource('categories', CategoryController::class)->only(['store', 'update', 'destroy']);
+         Route::get('analytics/trainer', [AnalyticsController::class, 'trainer']); // ✅ ajoute
         Route::apiResource('courses', CourseController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('modules', ModuleController::class);
         Route::apiResource('lessons', LessonController::class);

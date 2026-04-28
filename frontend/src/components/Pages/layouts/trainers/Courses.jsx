@@ -1,13 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import {
-  Plus,
-  Edit,
-  Trash2,
-  Users,
-  Star,
-  BarChart2,
-  ImagePlus,
-} from "lucide-react";
+import { Plus, Edit, Trash2, Users, Star, ImagePlus } from "lucide-react";
 import {
   createCourseFromForm,
   deleteCourseById,
@@ -24,7 +16,6 @@ const EMPTY_FORM = {
   title: "",
   category: "Development",
   duration: "",
-  price: "",
   description: "",
   image_url: "",
   image_file: null,
@@ -36,42 +27,50 @@ export function TrainerCourses() {
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [toast, setToast] = useState({ show: false, text: "", variant: "info" });
+  const [toast, setToast] = useState({
+    show: false,
+    text: "",
+    variant: "info",
+  });
   const [loading, setLoading] = useState(false);
 
-  const showToast = (text, variant = "info") => {
+  const user = getStoredUser();
+  const accountId = Number(user?.id || 0);
+
+  const showToast = (text, variant = "info") =>
     setToast({ show: true, text, variant });
-  };
 
   const imagePreview = useMemo(() => {
-    if (form.image_file) {
-      return URL.createObjectURL(form.image_file);
-    }
+    if (form.image_file) return URL.createObjectURL(form.image_file);
     return resolveCourseImage(form.image_url, form.title);
   }, [form.image_file, form.image_url, form.title]);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const { ok, data } = await fetchCourses();
-      if (ok && Array.isArray(data)) {
-        setCourses(data);
-      } else {
-        showToast(data.message || "Failed to load courses", "danger");
-      }
-      setLoading(false);
-    };
-
-    load();
-  }, []);
-
+useEffect(() => {
+  if (!accountId) return;
+  const load = async () => {
+    setLoading(true);
+    const { ok, data } = await fetchCourses();
+    const list = Array.isArray(data?.courses) ? data.courses : [];
+    setCourses(list.filter(c => Number(c.trainer_id) === accountId));
+    if (!ok) showToast("Failed to load courses", "danger");
+    setLoading(false);
+  };
+  load();
+}, [accountId]);
   useEffect(() => {
     return () => {
-      if (form.image_file) {
-        URL.revokeObjectURL(imagePreview);
-      }
+      if (form.image_file) URL.revokeObjectURL(imagePreview);
     };
   }, [form.image_file, imagePreview]);
+
+  useEffect(() => {
+    if (!toast.show) return;
+    const timer = setTimeout(
+      () => setToast((t) => ({ ...t, show: false })),
+      2500,
+    );
+    return () => clearTimeout(timer);
+  }, [toast.show]);
 
   const openCreate = () => {
     setIsEdit(false);
@@ -86,7 +85,6 @@ export function TrainerCourses() {
       title: course.title || "",
       category: course.category || "Development",
       duration: course.duration || "",
-      price: String(course.price || ""),
       description: course.description || "",
       image_url: course.image || "",
       image_file: null,
@@ -95,70 +93,58 @@ export function TrainerCourses() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const user = getStoredUser();
+  e.preventDefault();
 
-    if (!form.title || !form.description || Number(form.price) <= 0) {
-      showToast("Title, description and valid price are required", "danger");
+  if (!form.title || !form.description) {
+    showToast("Title and description are required", "danger");
+    return;
+  }
+
+  let finalForm = { ...form };
+  if (form.image_file) {
+    const upload = await uploadImageFile(form.image_file);
+    if (!upload.ok || !upload.data?.url) {
+      showToast(upload.data?.message || "Image upload failed", "danger");
       return;
     }
+    finalForm = { ...finalForm, image_url: upload.data.url };
+  }
 
-    let finalForm = { ...form };
-    if (form.image_file) {
-      const upload = await uploadImageFile(form.image_file);
-      if (!upload.ok || !upload.data?.url) {
-        showToast(upload.data?.message || "Image upload failed", "danger");
-        return;
-      }
-      finalForm = { ...finalForm, image_url: upload.data.url };
-    }
+  const call = isEdit
+    ? updateCourseFromForm(form.id, finalForm, accountId)
+    : createCourseFromForm(finalForm, accountId);
+  const { data } = await call;
 
-    const call = isEdit
-      ? updateCourseFromForm(form.id, finalForm, user?.id || null)
-      : createCourseFromForm(finalForm, user?.id || null);
-    const { data } = await call;
+  if (!data.status) {
+    showToast(data.message || "Operation failed", "danger");
+    return;
+  }
 
-    if (!data.status) {
-      showToast(data.message || "Operation failed", "danger");
-      return;
-    }
+  const { ok: refreshedOk, data: refreshed } = await fetchCourses();
+  const list = Array.isArray(refreshed?.courses) ? refreshed.courses : [];
+  if (refreshedOk) setCourses(list.filter(c => Number(c.trainer_id) === accountId));
 
-    const { ok: refreshedOk, data: refreshed } = await fetchCourses();
-    if (refreshedOk && Array.isArray(refreshed)) {
-      setCourses(refreshed);
-    }
-
-    showToast(data.message || (isEdit ? "Course updated" : "Course created"), "success");
-    setForm(EMPTY_FORM);
-    setShowForm(false);
-  };
-
+  showToast(data.message || (isEdit ? "Course updated" : "Course created"), "success");
+  setForm(EMPTY_FORM);
+  setShowForm(false);
+};
   const handleDelete = async (id) => {
-    const ok = window.confirm("Delete this course?");
-    if (!ok) return;
-
+    if (!window.confirm("Delete this course?")) return;
     const { data } = await deleteCourseById(id);
-
     if (!data.status) {
       showToast(data.message || "Delete failed", "danger");
       return;
     }
-
     setCourses((prev) => prev.filter((c) => Number(c.id) !== Number(id)));
     showToast("Course deleted", "success");
   };
 
-  useEffect(() => {
-    if (!toast.show) return;
-    const timer = setTimeout(() => {
-      setToast((t) => ({ ...t, show: false }));
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, [toast.show]);
-
   const visibleCourses = useMemo(() => {
     if (activeFilter === "Published") {
-      return courses.filter((course) => String(course.raw?.status || "published").toLowerCase() === "published");
+      return courses.filter(
+        (c) =>
+          String(c.raw?.status || "published").toLowerCase() === "published",
+      );
     }
     return courses;
   }, [activeFilter, courses]);
@@ -171,6 +157,7 @@ export function TrainerCourses() {
         variant={toast.variant}
         onClose={() => setToast((t) => ({ ...t, show: false }))}
       />
+
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div className="btn-group">
           {["All", "Published"].map((f) => (
@@ -184,8 +171,11 @@ export function TrainerCourses() {
             </button>
           ))}
         </div>
-
-        <button className="btn btn-primary d-flex align-items-center gap-2" onClick={openCreate} type="button">
+        <button
+          className="btn btn-primary d-flex align-items-center gap-2"
+          onClick={openCreate}
+          type="button"
+        >
           <Plus size={18} /> Create Course
         </button>
       </div>
@@ -195,7 +185,11 @@ export function TrainerCourses() {
           <div className="card-body">
             <div className="d-flex justify-content-between mb-3">
               <h5>{isEdit ? "Edit Course" : "Create New Course"}</h5>
-              <button className="btn-close" onClick={() => setShowForm(false)} type="button" />
+              <button
+                className="btn-close"
+                onClick={() => setShowForm(false)}
+                type="button"
+              />
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -205,7 +199,9 @@ export function TrainerCourses() {
                   <input
                     className="form-control"
                     value={form.title}
-                    onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, title: e.target.value }))
+                    }
                     required
                   />
                 </div>
@@ -215,7 +211,9 @@ export function TrainerCourses() {
                   <select
                     className="form-select"
                     value={form.category}
-                    onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, category: e.target.value }))
+                    }
                   >
                     <option>Development</option>
                     <option>Design</option>
@@ -231,20 +229,9 @@ export function TrainerCourses() {
                     className="form-control"
                     placeholder="Ex: 12 hours"
                     value={form.duration}
-                    onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))}
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Price ($)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="0.01"
-                    className="form-control"
-                    value={form.price}
-                    onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))}
-                    required
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, duration: e.target.value }))
+                    }
                   />
                 </div>
 
@@ -254,7 +241,9 @@ export function TrainerCourses() {
                     rows="3"
                     className="form-control"
                     value={form.description}
-                    onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, description: e.target.value }))
+                    }
                     required
                   />
                 </div>
@@ -265,7 +254,13 @@ export function TrainerCourses() {
                     className="form-control"
                     placeholder="https://..."
                     value={form.image_url}
-                    onChange={(e) => setForm((p) => ({ ...p, image_url: e.target.value, image_file: null }))}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        image_url: e.target.value,
+                        image_file: null,
+                      }))
+                    }
                   />
                 </div>
 
@@ -277,7 +272,12 @@ export function TrainerCourses() {
                     type="file"
                     accept="image/*"
                     className="form-control"
-                    onChange={(e) => setForm((p) => ({ ...p, image_file: e.target.files?.[0] || null }))}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        image_file: e.target.files?.[0] || null,
+                      }))
+                    }
                   />
                 </div>
 
@@ -286,7 +286,11 @@ export function TrainerCourses() {
                     src={imagePreview}
                     alt="preview"
                     className="rounded border"
-                    style={{ width: "180px", height: "110px", objectFit: "cover" }}
+                    style={{
+                      width: "180px",
+                      height: "110px",
+                      objectFit: "cover",
+                    }}
                   />
                 </div>
               </div>
@@ -295,7 +299,11 @@ export function TrainerCourses() {
                 <button className="btn btn-primary me-2" type="submit">
                   {isEdit ? "Save Changes" : "Create Course"}
                 </button>
-                <button className="btn btn-outline-secondary" onClick={() => setShowForm(false)} type="button">
+                <button
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowForm(false)}
+                  type="button"
+                >
                   Cancel
                 </button>
               </div>
@@ -304,7 +312,16 @@ export function TrainerCourses() {
         </div>
       )}
 
-      {loading ? <div className="alert alert-light">Loading courses...</div> : null}
+      {loading && <div className="alert alert-light">Loading courses...</div>}
+
+      {!loading && visibleCourses.length === 0 && (
+        <div className="text-center text-muted py-5">
+          <p>
+            No courses found. Click <strong>Create Course</strong> to get
+            started.
+          </p>
+        </div>
+      )}
 
       {visibleCourses.map((course) => (
         <div key={course.id} className="card mb-3 shadow-sm">
@@ -317,27 +334,29 @@ export function TrainerCourses() {
                 className="rounded me-3"
                 style={{ objectFit: "cover" }}
                 alt={course.title}
+                onError={(e) => {
+                  e.target.src = "https://placehold.co/96x80?text=N/A";
+                }}
               />
-
               <div className="flex-grow-1">
                 <div className="d-flex justify-content-between">
                   <div>
                     <span className="badge bg-success me-2">Published</span>
-                    <small className="text-muted">{course.category || "General"}</small>
+                    <small className="text-muted">
+                      {course.category || "General"}
+                    </small>
                     <h6 className="mt-1">{course.title}</h6>
-                    <p className="text-muted small mb-1">{course.description}</p>
+                    <p className="text-muted small mb-1">
+                      {course.description}
+                    </p>
                   </div>
                 </div>
-
                 <div className="d-flex gap-4 mt-2 small text-muted align-items-center">
                   <span className="d-flex align-items-center gap-1">
-                    <Users size={16} /> 0
+                    <Users size={16} /> {course.students ?? 0}
                   </span>
                   <span className="d-flex align-items-center gap-1">
-                    <Star size={16} /> -
-                  </span>
-                  <span className="text-success d-flex align-items-center gap-1">
-                    <BarChart2 size={16} /> ${Number(course.price || 0).toFixed(2)}
+                    <Star size={16} /> {course.rating ?? "-"}
                   </span>
                 </div>
               </div>
@@ -345,10 +364,18 @@ export function TrainerCourses() {
           </div>
 
           <div className="card-footer d-flex gap-2">
-            <button className="btn btn-outline-secondary flex-fill" onClick={() => openEdit(course)} type="button">
+            <button
+              className="btn btn-outline-secondary flex-fill"
+              onClick={() => openEdit(course)}
+              type="button"
+            >
               <Edit size={16} /> Edit
             </button>
-            <button className="btn btn-outline-danger flex-fill" onClick={() => handleDelete(course.id)} type="button">
+            <button
+              className="btn btn-outline-danger flex-fill"
+              onClick={() => handleDelete(course.id)}
+              type="button"
+            >
               <Trash2 size={16} /> Delete
             </button>
           </div>

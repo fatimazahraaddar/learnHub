@@ -29,7 +29,7 @@ import { TrainerCourses } from "./Pages/layouts/trainers/Courses";
 import { TrainerStudents } from "./Pages/layouts/trainers/Students";
 import { TrainerOverview } from "./Pages/layouts/trainers/Overview";
 import { TrainerProfile } from "./Pages/layouts/trainers/Profile";
-
+import { TrainerAnalytics } from "./Pages/layouts/trainers/Analytics";
 
 // Admin imports
 import { AdminDashboard } from "./Pages/LayoutDashboard";
@@ -115,6 +115,7 @@ export const Router = createBrowserRouter([
           { path: "students", element: <TrainerStudents /> },
           { path: "profile", element: <TrainerProfile /> },
           { path: "overview", element: <TrainerOverview /> },
+          { path: "analytics", element: <TrainerAnalytics /> },
         ],
       },
     ],
