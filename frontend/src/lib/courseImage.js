@@ -12,14 +12,16 @@ const DEFAULT_COURSE_IMAGE =
 
 export function resolveCourseImage(image, title = "") {
   const raw = String(image || "").trim();
+  
   if (!raw) return DEFAULT_COURSE_IMAGE;
 
   if (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("data:image")) {
     return raw;
   }
 
-  const byFile = IMAGE_BY_FILENAME[raw.toLowerCase()];
-  if (byFile) return byFile;
+  if (!raw.includes("://")) {
+    return `http://127.0.0.1:8000/storage/${raw}`;
+  }
 
   const keyword = encodeURIComponent(title || "online course");
   return `https://source.unsplash.com/1200x700/?${keyword}`;

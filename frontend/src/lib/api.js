@@ -450,30 +450,18 @@ export async function fetchSubscriptionPlans() {
 export async function fetchCourses() {
   const { ok, data } = await apiRequest("courses");
 
-  if (!ok || !data) {
-    return {
-      ok: false,
-      data: { status: false, courses: [], message: data?.message || "Courses not found" },
-    };
-  }
+  if (!ok) return { ok: false, data: { courses: [] } };
 
-  const list = asArray(data); // 👈 gère tableau direct ou { data: [...] }
+  const list = data.data || (Array.isArray(data) ? data : []);
 
   return {
     ok: true,
     data: {
-      status: true,
-      courses: list.map((course) => ({
-        id: course.id || "",
-        title: course.title || "",
-        description: course.description || "",
-        instructor: course.instructor || "",
-        duration: course.duration || "",
-        level: course.level || "",
-        image: course.image || "",
-        category: course.category?.name || course.category || "",
-        students: course.students || 0,
-        trainer_id: course.trainer_id || course.user_id || "",
+      courses: list.map((c) => ({
+        ...c,
+        image: c.thumbnail_url || c.image_url || "",
+        category: c.category?.name || "General",
+        // ...
       })),
     },
   };
