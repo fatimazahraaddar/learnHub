@@ -62,7 +62,6 @@ export function LearnerCourses() {
                 <small className="text-muted">Course</small>
                 <h6 className="fw-semibold">{course.title}</h6>
                 <p className="text-muted mb-1">{course.description}</p>
-                <strong>${course.price}</strong>
               </div>
             </div>
           </div>

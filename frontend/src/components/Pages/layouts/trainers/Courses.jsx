@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { Plus, Edit, Trash2, Users, Star, ImagePlus } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Star, ImagePlus, Clock } from "lucide-react";
 import {
   createCourseFromForm,
   deleteCourseById,
@@ -27,11 +27,7 @@ export function TrainerCourses() {
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [toast, setToast] = useState({
-    show: false,
-    text: "",
-    variant: "info",
-  });
+  const [toast, setToast] = useState({ show: false, text: "", variant: "info" });
   const [loading, setLoading] = useState(false);
 
   const user = getStoredUser();
@@ -45,18 +41,19 @@ export function TrainerCourses() {
     return resolveCourseImage(form.image_url, form.title);
   }, [form.image_file, form.image_url, form.title]);
 
-useEffect(() => {
-  if (!accountId) return;
-  const load = async () => {
-    setLoading(true);
-    const { ok, data } = await fetchCourses();
-    const list = Array.isArray(data?.courses) ? data.courses : [];
-    setCourses(list.filter(c => Number(c.trainer_id) === accountId));
-    if (!ok) showToast("Failed to load courses", "danger");
-    setLoading(false);
-  };
-  load();
-}, [accountId]);
+  useEffect(() => {
+    if (!accountId) return;
+    const load = async () => {
+      setLoading(true);
+      const { ok, data } = await fetchCourses();
+      const list = Array.isArray(data?.courses) ? data.courses : [];
+      setCourses(list.filter(c => Number(c.trainer_id) === accountId));
+      if (!ok) showToast("Failed to load courses", "danger");
+      setLoading(false);
+    };
+    load();
+  }, [accountId]);
+
   useEffect(() => {
     return () => {
       if (form.image_file) URL.revokeObjectURL(imagePreview);
@@ -65,10 +62,7 @@ useEffect(() => {
 
   useEffect(() => {
     if (!toast.show) return;
-    const timer = setTimeout(
-      () => setToast((t) => ({ ...t, show: false })),
-      2500,
-    );
+    const timer = setTimeout(() => setToast((t) => ({ ...t, show: false })), 2500);
     return () => clearTimeout(timer);
   }, [toast.show]);
 
@@ -84,7 +78,7 @@ useEffect(() => {
       id: String(course.id),
       title: course.title || "",
       category: course.category || "Development",
-      duration: course.duration || "",
+      duration: course.duration_minutes || "",
       description: course.description || "",
       image_url: course.image || "",
       image_file: null,
@@ -93,41 +87,42 @@ useEffect(() => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!form.title || !form.description) {
-    showToast("Title and description are required", "danger");
-    return;
-  }
-
-  let finalForm = { ...form };
-  if (form.image_file) {
-    const upload = await uploadImageFile(form.image_file);
-    if (!upload.ok || !upload.data?.url) {
-      showToast(upload.data?.message || "Image upload failed", "danger");
+    if (!form.title || !form.description) {
+      showToast("Title and description are required", "danger");
       return;
     }
-    finalForm = { ...finalForm, image_url: upload.data.url };
-  }
 
-  const call = isEdit
-    ? updateCourseFromForm(form.id, finalForm, accountId)
-    : createCourseFromForm(finalForm, accountId);
-  const { data } = await call;
+    let finalForm = { ...form };
+    if (form.image_file) {
+      const upload = await uploadImageFile(form.image_file);
+      if (!upload.ok || !upload.data?.url) {
+        showToast(upload.data?.message || "Image upload failed", "danger");
+        return;
+      }
+      finalForm = { ...finalForm, image_url: upload.data.url };
+    }
 
-  if (!data.status) {
-    showToast(data.message || "Operation failed", "danger");
-    return;
-  }
+    const call = isEdit
+      ? updateCourseFromForm(form.id, finalForm, accountId)
+      : createCourseFromForm(finalForm, accountId);
+    const { data } = await call;
 
-  const { ok: refreshedOk, data: refreshed } = await fetchCourses();
-  const list = Array.isArray(refreshed?.courses) ? refreshed.courses : [];
-  if (refreshedOk) setCourses(list.filter(c => Number(c.trainer_id) === accountId));
+    if (!data.status) {
+      showToast(data.message || "Operation failed", "danger");
+      return;
+    }
 
-  showToast(data.message || (isEdit ? "Course updated" : "Course created"), "success");
-  setForm(EMPTY_FORM);
-  setShowForm(false);
-};
+    const { ok: refreshedOk, data: refreshed } = await fetchCourses();
+    const list = Array.isArray(refreshed?.courses) ? refreshed.courses : [];
+    if (refreshedOk) setCourses(list.filter(c => Number(c.trainer_id) === accountId));
+
+    showToast(data.message || (isEdit ? "Course updated" : "Course created"), "success");
+    setForm(EMPTY_FORM);
+    setShowForm(false);
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this course?")) return;
     const { data } = await deleteCourseById(id);
@@ -142,8 +137,7 @@ useEffect(() => {
   const visibleCourses = useMemo(() => {
     if (activeFilter === "Published") {
       return courses.filter(
-        (c) =>
-          String(c.raw?.status || "published").toLowerCase() === "published",
+        (c) => String(c.raw?.status || "published").toLowerCase() === "published",
       );
     }
     return courses;
@@ -185,11 +179,7 @@ useEffect(() => {
           <div className="card-body">
             <div className="d-flex justify-content-between mb-3">
               <h5>{isEdit ? "Edit Course" : "Create New Course"}</h5>
-              <button
-                className="btn-close"
-                onClick={() => setShowForm(false)}
-                type="button"
-              />
+              <button className="btn-close" onClick={() => setShowForm(false)} type="button" />
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -199,9 +189,7 @@ useEffect(() => {
                   <input
                     className="form-control"
                     value={form.title}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, title: e.target.value }))
-                    }
+                    onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
                     required
                   />
                 </div>
@@ -211,9 +199,7 @@ useEffect(() => {
                   <select
                     className="form-select"
                     value={form.category}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, category: e.target.value }))
-                    }
+                    onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
                   >
                     <option>Development</option>
                     <option>Design</option>
@@ -224,14 +210,13 @@ useEffect(() => {
                 </div>
 
                 <div className="col-md-6">
-                  <label className="form-label">Duration</label>
+                  <label className="form-label">Duration (minutes)</label>
                   <input
                     className="form-control"
-                    placeholder="Ex: 12 hours"
+                    placeholder="Ex: 90"
+                    type="number"
                     value={form.duration}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, duration: e.target.value }))
-                    }
+                    onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))}
                   />
                 </div>
 
@@ -241,9 +226,7 @@ useEffect(() => {
                     rows="3"
                     className="form-control"
                     value={form.description}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, description: e.target.value }))
-                    }
+                    onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
                     required
                   />
                 </div>
@@ -255,11 +238,7 @@ useEffect(() => {
                     placeholder="https://..."
                     value={form.image_url}
                     onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        image_url: e.target.value,
-                        image_file: null,
-                      }))
+                      setForm((p) => ({ ...p, image_url: e.target.value, image_file: null }))
                     }
                   />
                 </div>
@@ -273,10 +252,7 @@ useEffect(() => {
                     accept="image/*"
                     className="form-control"
                     onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        image_file: e.target.files?.[0] || null,
-                      }))
+                      setForm((p) => ({ ...p, image_file: e.target.files?.[0] || null }))
                     }
                   />
                 </div>
@@ -286,11 +262,7 @@ useEffect(() => {
                     src={imagePreview}
                     alt="preview"
                     className="rounded border"
-                    style={{
-                      width: "180px",
-                      height: "110px",
-                      objectFit: "cover",
-                    }}
+                    style={{ width: "180px", height: "110px", objectFit: "cover" }}
                   />
                 </div>
               </div>
@@ -316,10 +288,7 @@ useEffect(() => {
 
       {!loading && visibleCourses.length === 0 && (
         <div className="text-center text-muted py-5">
-          <p>
-            No courses found. Click <strong>Create Course</strong> to get
-            started.
-          </p>
+          <p>No courses found. Click <strong>Create Course</strong> to get started.</p>
         </div>
       )}
 
@@ -334,30 +303,29 @@ useEffect(() => {
                 className="rounded me-3"
                 style={{ objectFit: "cover" }}
                 alt={course.title}
-                onError={(e) => {
-                  e.target.src = "https://placehold.co/96x80?text=N/A";
-                }}
+                onError={(e) => { e.target.src = "https://placehold.co/96x80?text=N/A"; }}
               />
               <div className="flex-grow-1">
                 <div className="d-flex justify-content-between">
                   <div>
                     <span className="badge bg-success me-2">Published</span>
-                    <small className="text-muted">
-                      {course.category || "General"}
-                    </small>
+                    <small className="text-muted">{course.category || "General"}</small>
                     <h6 className="mt-1">{course.title}</h6>
-                    <p className="text-muted small mb-1">
-                      {course.description}
-                    </p>
+                    <p className="text-muted small mb-1">{course.description}</p>
                   </div>
                 </div>
                 <div className="d-flex gap-4 mt-2 small text-muted align-items-center">
                   <span className="d-flex align-items-center gap-1">
-                    <Users size={16} /> {course.students ?? 0}
+                    <Users size={16} /> {course.students_count ?? 0}
                   </span>
                   <span className="d-flex align-items-center gap-1">
                     <Star size={16} /> {course.rating ?? "-"}
                   </span>
+                  {course.duration_minutes && (
+                    <span className="d-flex align-items-center gap-1">
+                      <Clock size={16} /> {Math.round(course.duration_minutes / 60)}h
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

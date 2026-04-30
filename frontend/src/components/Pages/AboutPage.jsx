@@ -4,229 +4,228 @@ import { Link } from "react-router-dom";
 import { Linkedin, Twitter } from "lucide-react";
 import { fetchCourses, fetchTeamMembers, fetchTestimonials } from "../../lib/api";
 
+const PRIMARY = "#1E3A5F";
+const ACCENT  = "#10B981";
+
 const VALUES = [
-{ icon: Target, title: "Mission-Driven", desc: "Accessible education for everyone.", color: "#4A90E2" },
-{ icon: Users, title: "Community First", desc: "Learning together globally.", color: "#7F3FBF" },
-{ icon: Award, title: "Excellence", desc: "High-quality courses only.", color: "#FF7A00" },
-{ icon: Heart, title: "Learner-Centric", desc: "Focused on students.", color: "#28A745" },
+  { icon: Target, title: "Mission-Driven",   desc: "Accessible education for everyone.", color: PRIMARY },
+  { icon: Users,  title: "Community First",  desc: "Learning together globally.",         color: ACCENT },
+  { icon: Award,  title: "Excellence",       desc: "High-quality courses only.",          color: "#FF7A00" },
+  { icon: Heart,  title: "Learner-Centric",  desc: "Focused on students.",                color: "#E91E8C" },
 ];
 
 export function AboutPage() {
-const [teamMembers, setTeamMembers] = useState([]);
-const [stats, setStats] = useState([
-  { value: "0+", label: "Learners" },
-  { value: "0+", label: "Courses" },
-  { value: "0+", label: "Instructors" },
-  { value: "0+", label: "Certificates" },
-]);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [stats, setStats] = useState([
+    { value: "0+", label: "Learners" },
+    { value: "0+", label: "Courses" },
+    { value: "0+", label: "Instructors" },
+    { value: "0+", label: "Certificates" },
+  ]);
 
-useEffect(() => {
-const load = async () => {
-const [teamRes, courseRes, testimonialsRes] = await Promise.all([
-  fetchTeamMembers(),
-  fetchCourses(),
-  fetchTestimonials(),
-]);
+  useEffect(() => {
+    const load = async () => {
+      const [teamRes, courseRes, testimonialsRes] = await Promise.all([
+        fetchTeamMembers(),
+        fetchCourses(),
+        fetchTestimonials(),
+      ]);
+      const team         = Array.isArray(teamRes.data)         ? teamRes.data         : [];
+      const courses      = Array.isArray(courseRes.data)       ? courseRes.data       : [];
+      const testimonials = Array.isArray(testimonialsRes.data) ? testimonialsRes.data : [];
 
-const team = Array.isArray(teamRes.data) ? teamRes.data : [];
-const courses = Array.isArray(courseRes.data) ? courseRes.data : [];
-const testimonials = Array.isArray(testimonialsRes.data) ? testimonialsRes.data : [];
+      setTeamMembers(team);
+      setStats([
+        { value: `${Math.max(courses.reduce((sum, c) => sum + Number(c.students || 0), 0), 0).toLocaleString()}+`, label: "Learners" },
+        { value: `${courses.length.toLocaleString()}+`,           label: "Courses" },
+        { value: `${team.length.toLocaleString()}+`,              label: "Instructors" },
+        { value: `${(testimonials.length * 10).toLocaleString()}+`, label: "Certificates" },
+      ]);
+    };
+    load();
+  }, []);
 
-setTeamMembers(team);
-setStats([
-  { value: `${Math.max(courses.reduce((sum, c) => sum + Number(c.students || 0), 0), 0).toLocaleString()}+`, label: "Learners" },
-  { value: `${courses.length.toLocaleString()}+`, label: "Courses" },
-  { value: `${team.length.toLocaleString()}+`, label: "Instructors" },
-  { value: `${(testimonials.length * 10).toLocaleString()}+`, label: "Certificates" },
-]);
-};
-load();
-}, []);
+  return (
+    <div style={{ backgroundColor: "#F4F7FB" }}>
 
-return ( <div>
+      {/* ── HERO ── */}
+      <div className="py-5 text-center text-white"
+        style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, #16324F 100%)` }}>
+        <div className="container">
+          <span className="badge px-3 py-2 rounded-pill mb-3"
+            style={{ background: `${ACCENT}33`, color: ACCENT, fontSize: "0.85rem", fontWeight: 600 }}>
+            About Us
+          </span>
+          <h1 className="fw-bold mb-3" style={{ fontSize: "clamp(1.8rem,4vw,2.8rem)" }}>
+            Redefining How the World Learns
+          </h1>
+          <p style={{ opacity: 0.75 }}>
+            Our mission is to make quality education accessible to everyone, everywhere.
+          </p>
+        </div>
+      </div>
 
+      {/* ── STATS ── */}
+      <div className="container py-5">
+        <div className="row g-4 text-center">
+          {stats.map((s, i) => (
+            <div className="col-6 col-md-3" key={s.label}>
+              <div className="card border-0 rounded-4 p-4 h-100"
+                style={{ background: "white", boxShadow: "0 4px 20px rgba(0,0,0,0.06)", transition: "transform .2s" }}
+                onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
+                onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
+                <h4 className="fw-bold mb-1" style={{ color: i % 2 === 0 ? PRIMARY : ACCENT }}>
+                  {s.value}
+                </h4>
+                <small className="text-muted">{s.label}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-  {/* HERO */}
-  <div
-    className="py-5 text-center text-white"
-    style={{ background: "linear-gradient(135deg,#0f0c29,#302b63)" }}
-  >
-    <div className="container">
-      <h1 className="fw-bold mb-3">About Us</h1>
-      <p className="text-light">
-        Redefining how the world learns.
-      </p>
-    </div>
-  </div>
-
-  {/* STATS */}
-  <div className="container py-5">
-    <div className="row text-center g-4">
-
-      {stats.map((s) => (
-        <div className="col-md-3" key={s.label}>
-          <div className="card p-3 shadow-sm">
-            <h4 className="text-primary fw-bold">{s.value}</h4>
-            <small>{s.label}</small>
+      {/* ── MISSION ── */}
+      <div className="py-5 bg-white">
+        <div className="container">
+          <div className="row align-items-center g-5">
+            <div className="col-lg-6">
+              <span className="badge px-3 py-2 rounded-pill mb-3"
+                style={{ background: `${ACCENT}22`, color: ACCENT, fontWeight: 600 }}>
+                Our Mission
+              </span>
+              <h2 className="fw-bold mb-3" style={{ color: PRIMARY }}>
+                Making Education Accessible Worldwide
+              </h2>
+              <p className="text-muted mb-4" style={{ lineHeight: 1.8 }}>
+                We believe that learning should have no borders. Our platform connects ambitious learners with world-class instructors to build the skills of tomorrow.
+              </p>
+              <ul className="list-unstyled">
+                {["Expert instructors", "Multi-language courses", "Scholarships", "Corporate training"].map((item, i) => (
+                  <li key={i} className="d-flex align-items-center mb-3">
+                    <div className="d-flex align-items-center justify-content-center rounded-circle me-3 flex-shrink-0"
+                      style={{ width: "28px", height: "28px", background: `${ACCENT}22` }}>
+                      <CheckCircle size={15} style={{ color: ACCENT }} />
+                    </div>
+                    <span style={{ color: PRIMARY, fontWeight: 500 }}>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="col-lg-6">
+              <div className="rounded-4 overflow-hidden shadow-lg" style={{ border: `2px solid ${ACCENT}33` }}>
+                <img
+                  src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80"
+                  className="img-fluid w-100"
+                  style={{ height: "22rem", objectFit: "cover" }}
+                  alt="mission"
+                />
+              </div>
+            </div>
           </div>
         </div>
-      ))}
-
-    </div>
-  </div>
-
-  {/* MISSION */}
-  <div className="container py-5">
-    <div className="row align-items-center">
-
-      <div className="col-lg-6">
-        <h3 className="fw-bold">Our Mission</h3>
-        <p className="text-muted">
-          Making education accessible worldwide.
-        </p>
-
-        <ul className="list-unstyled">
-          {[
-            "Expert instructors",
-            "Multi-language courses",
-            "Scholarships",
-            "Corporate training",
-          ].map((item, i) => (
-            <li key={i} className="d-flex align-items-center mb-2">
-              <CheckCircle size={16} className="text-success me-2" />
-              {item}
-            </li>
-          ))}
-        </ul>
       </div>
 
-      <div className="col-lg-6">
-        <img
-          src="https://images.unsplash.com/photo-1758612214917-81d7956c09de?w=600"
-          className="img-fluid rounded"
-          alt="mission"
-        />
-      </div>
-
-    </div>
-  </div>
-
-  {/* VALUES */}
-  <div className="bg-light py-5">
-    <div className="container">
-      <h3 className="text-center mb-4 fw-bold">Our Values</h3>
-
-      <div className="row g-4">
-
-        {VALUES.map((v) => (
-          <div key={v.title} className="col-md-3">
-
-            <div className="card p-3 text-center shadow-sm">
-
-              <v.icon size={30} style={{ color: v.color }} />
-
-              <h6 className="mt-2">{v.title}</h6>
-              <p className="text-muted small">{v.desc}</p>
-
-            </div>
-
+      {/* ── VALUES ── */}
+      <div className="py-5" style={{ background: "#F4F7FB" }}>
+        <div className="container">
+          <div className="text-center mb-5">
+            <span className="badge px-3 py-2 rounded-pill mb-3"
+              style={{ background: `${PRIMARY}18`, color: PRIMARY, fontWeight: 600 }}>
+              Our Values
+            </span>
+            <h2 className="fw-bold" style={{ color: PRIMARY }}>What We Stand For</h2>
           </div>
-        ))}
-
+          <div className="row g-4">
+            {VALUES.map((v) => (
+              <div key={v.title} className="col-md-6 col-lg-3">
+                <div className="card border-0 rounded-4 p-4 text-center h-100"
+                  style={{ background: "white", boxShadow: "0 2px 16px rgba(0,0,0,0.06)", transition: "all .2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.borderColor = v.color; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; }}>
+                  <div className="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-3"
+                    style={{ width: "3rem", height: "3rem", background: `${v.color}18` }}>
+                    <v.icon size={22} style={{ color: v.color }} />
+                  </div>
+                  <h6 className="fw-bold mb-1" style={{ color: PRIMARY }}>{v.title}</h6>
+                  <p className="text-muted small mb-0">{v.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-    </div>
-  </div>
-
-  {/* TEAM */}
-  <div className="container py-5">
-    <h3 className="text-center mb-4 fw-bold">Our Team</h3>
-
-    <div className="container">
-      <div className="row g-4">
-        {teamMembers.map((member) => (
-          <div key={member.id} className="col-12 col-sm-6 col-lg-3">
-            
-            <div className="card border-0 shadow-sm h-100 team-card">
-              
-              {/* IMAGE */}
-              <div className="position-relative overflow-hidden" style={{ height: "220px" }}>
-                <img
-                  src={member.image}
-                  alt={member.name}
-                  className="w-100 h-100 object-fit-cover team-img"
-                />
-
-                {/* OVERLAY */}
-                <div className="overlay d-flex align-items-end justify-content-center">
-                  <div className="d-flex gap-2 mb-3">
-                    
-                    <button
-                      className="icon-btn"
-                      type="button"
-                      onClick={() => {
-                        if (member.linkedin) {
-                          window.open(member.linkedin, "_blank", "noopener,noreferrer");
-                        }
-                      }}
-                    >
-                      <Linkedin size={14} color="white" />
-                    </button>
-
-                    <button
-                      className="icon-btn"
-                      type="button"
-                      onClick={() => {
-                        if (member.twitter) {
-                          window.open(member.twitter, "_blank", "noopener,noreferrer");
-                        }
-                      }}
-                    >
-                      <Twitter size={14} color="white" />
-                    </button>
-
+      {/* ── TEAM ── */}
+      <div className="py-5 bg-white">
+        <div className="container">
+          <div className="text-center mb-5">
+            <span className="badge px-3 py-2 rounded-pill mb-3"
+              style={{ background: `${ACCENT}22`, color: ACCENT, fontWeight: 600 }}>
+              Our Team
+            </span>
+            <h2 className="fw-bold" style={{ color: PRIMARY }}>Meet the People Behind LearnHub</h2>
+          </div>
+          <div className="row g-4">
+            {teamMembers.map((member) => (
+              <div key={member.id} className="col-12 col-sm-6 col-lg-3">
+                <div className="card border-0 rounded-4 h-100 overflow-hidden"
+                  style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", transition: "transform .2s" }}
+                  onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
+                  onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
+                  <div className="position-relative overflow-hidden" style={{ height: "220px" }}>
+                    <img src={member.image} alt={member.name}
+                      className="w-100 h-100" style={{ objectFit: "cover" }} />
+                    <div className="position-absolute bottom-0 start-0 w-100 d-flex justify-content-center pb-3 gap-2"
+                      style={{ background: "linear-gradient(to top, rgba(30,58,95,0.85), transparent)" }}>
+                      <button type="button" className="btn btn-sm rounded-circle d-flex align-items-center justify-content-center border-0"
+                        style={{ width: "32px", height: "32px", background: `${ACCENT}cc` }}
+                        onClick={() => member.linkedin && window.open(member.linkedin, "_blank", "noopener,noreferrer")}>
+                        <Linkedin size={14} color="white" />
+                      </button>
+                      <button type="button" className="btn btn-sm rounded-circle d-flex align-items-center justify-content-center border-0"
+                        style={{ width: "32px", height: "32px", background: `${PRIMARY}cc` }}
+                        onClick={() => member.twitter && window.open(member.twitter, "_blank", "noopener,noreferrer")}>
+                        <Twitter size={14} color="white" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="card-body text-center">
+                    <h6 className="fw-bold mb-0" style={{ color: PRIMARY }}>{member.name}</h6>
+                    <small className="fw-semibold" style={{ color: ACCENT }}>{member.role}</small>
+                    <p className="text-muted small mt-2 mb-0">{member.bio}</p>
                   </div>
                 </div>
               </div>
-
-              {/* CONTENT */}
-              <div className="card-body text-center">
-                <h5 className="mb-0">{member.name}</h5>
-                <small className="text-primary">{member.role}</small>
-                <p className="text-muted">{member.bio}</p>
-              </div>
-
-            </div>
-
+            ))}
           </div>
-        ))}
+        </div>
       </div>
+
+      {/* ── CTA ── */}
+      <div className="text-center text-white py-5"
+        style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, #16324F 100%)` }}>
+        <div className="container">
+          <span className="badge px-3 py-2 rounded-pill mb-3"
+            style={{ background: `${ACCENT}33`, color: ACCENT, fontWeight: 600 }}>
+            Join Us
+          </span>
+          <h3 className="fw-bold mb-2">Join Our Mission</h3>
+          <p className="mb-4" style={{ opacity: 0.7 }}>
+            Be part of a community that's changing the future of education.
+          </p>
+          <div className="d-flex flex-wrap justify-content-center gap-3">
+            <Link to="/auth" className="btn btn-lg fw-semibold px-5"
+              style={{ background: ACCENT, color: "white", borderRadius: "12px", border: "none", boxShadow: `0 6px 20px ${ACCENT}55` }}>
+              Start Learning
+            </Link>
+            <Link to="/trainer" className="btn btn-lg fw-semibold px-5"
+              style={{ background: "transparent", color: "white", borderRadius: "12px", border: "2px solid rgba(255,255,255,0.4)" }}>
+              Become Instructor
+            </Link>
+          </div>
+        </div>
+      </div>
+
     </div>
-  </div>
-
-  {/* CTA */}
-  <div
-    className="text-center text-white py-5"
-    style={{ background: "linear-gradient(135deg,#4A90E2,#7F3FBF)" }}
-  >
-    <h3 className="fw-bold">Join Our Mission</h3>
-
-    <div className="mt-3">
-
-      <Link to="/auth" className="btn btn-light me-2">
-        Start Learning
-      </Link>
-
-      <Link to="/trainer" className="btn btn-outline-light">
-        Become Instructor
-      </Link>
-
-    </div>
-
-  </div>
-
-</div>
-
-
-);
+  );
 }

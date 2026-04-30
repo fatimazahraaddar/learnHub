@@ -111,8 +111,8 @@ const ADMIN_ITEMS = [
     icon: <Award className="me-2" />,
   },
   {
-    label: "Reports",
-    path: "/admin/reports",
+    label: "statistics",
+    path: "/admin/statistics",
     icon: <BarChart2 className="me-2" />,
   },
 {
@@ -211,8 +211,8 @@ const PAGE_TITLES = {
     title: "Payments & Invoices",
     subtitle: "Track revenue and transactions.",
   },
-  "/admin/reports": {
-    title: "Reports & Analytics",
+  "/admin/statistics": {
+    title: "Statistics",
     subtitle: "Platform-wide performance insights.",
   },
   "/admin/messages": {
@@ -254,6 +254,7 @@ export function LearnerDashboard() {
         items={LEARNER_ITEMS}
         title="Learner Portal"
         accentColor="#4A90E2" // 🔵 ICI
+        width={280}
       />
       <div className="flex-grow-1 d-flex flex-column overflow-hidden">
         <DashboardTopbar title={pageInfo.title} subtitle={pageInfo.subtitle} />
@@ -285,7 +286,9 @@ export function TrainerDashboard() {
       <DashboardSidebar
         items={TRAINER_ITEMS}
         title="Trainer Portal"
-        accentColor="#7F3FBF" // 🟣 ICI !!!
+        accentColor="#7F3FBF"
+        width={280}
+         // 🟣 ICI !!!
       />
       <div className="flex-grow-1 d-flex flex-column overflow-hidden">
         <DashboardTopbar title={pageInfo.title} subtitle={pageInfo.subtitle} />
@@ -317,7 +320,9 @@ export function AdminDashboard() {
       <DashboardSidebar
         items={ADMIN_ITEMS}
         title="Admin Panel"
-        accentColor="#FF7A00" // 🟠 ICI
+        accentColor="#FF7A00"
+        width={280}
+         // 🟠 ICI
       />
       <div className="flex-grow-1 d-flex flex-column overflow-hidden">
         <DashboardTopbar title={pageInfo.title} subtitle={pageInfo.subtitle} />

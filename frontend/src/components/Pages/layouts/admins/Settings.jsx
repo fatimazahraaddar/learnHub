@@ -6,8 +6,7 @@ import { fetchPlatformSettings, savePlatformSettings } from "../../../../lib/api
 const SETTING_TABS = [
   { id: "general",       label: "General",       icon: Globe    },
   { id: "appearance",    label: "Appearance",    icon: Palette  },
-  { id: "navigation",    label: "Navigation",    icon: MenuIcon },
-  { id: "notifications", label: "Notifications", icon: Bell     },
+
   { id: "security",      label: "Security",      icon: Shield   },
 ];
 
@@ -248,38 +247,6 @@ export function AdminSettings() {
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* NOTIFICATIONS */}
-          {activeTab === "notifications" && (
-            <div className="card shadow-sm border rounded-3 p-4">
-              <h5 className="fw-bold mb-4">Notification Settings</h5>
-              {(Array.isArray(settings.notification_preferences) ? settings.notification_preferences : []).map((item, i) => (
-                <div key={item.label || i} className="d-flex justify-content-between align-items-center border-bottom py-2">
-                  <div>
-                    <div className="fw-medium">{item.label}</div>
-                    <small className="text-muted">Email and push channels</small>
-                  </div>
-                  <div className="d-flex gap-3">
-                    {["email", "push"].map((channel) => (
-                      <div key={channel} className="form-check form-check-inline mb-0">
-                        <input
-                          className="form-check-input"
-                          type="checkbox"
-                          checked={Boolean(item[channel])}
-                          onChange={(e) => setSettings((prev) => {
-                            const copy = [...(prev.notification_preferences || [])];
-                            copy[i] = { ...copy[i], [channel]: e.target.checked };
-                            return { ...prev, notification_preferences: copy };
-                          })}
-                        />
-                        <label className="form-check-label small text-capitalize">{channel}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
             </div>
           )}
 

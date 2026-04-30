@@ -37,7 +37,7 @@ import { AdminDashboards } from "./Pages/layouts/admins/AdminDashboard";
 import { AdminUsers } from "./Pages/layouts/admins/Users";
 import { AdminCourses } from "./Pages/layouts/admins/Courses";
 import { AdminCertificates } from "./Pages/layouts/admins/Certificates";
-import { AdminReports } from "./Pages/layouts/admins/Reports";
+import { AdminStatistics } from "./Pages/layouts/admins/Statistics";
 import { AdminNotifications } from "./Pages/layouts/admins/Notifications";
 import { AdminSettings } from "./Pages/layouts/admins/Settings";
 import { AdminTrainers } from "./Pages/layouts/admins/Trainers";
@@ -134,7 +134,7 @@ export const Router = createBrowserRouter([
           { path: "trainers", element: <AdminTrainers /> },
           { path: "courses", element: <AdminCourses /> },
           { path: "certificates", element: <AdminCertificates /> },
-          { path: "reports", element: <AdminReports /> },
+          { path: "statistics", element: <AdminStatistics /> },
           { path: "notifications", element: <AdminNotifications /> },
           { path: "settings", element: <AdminSettings /> },
           { path: "profile", element: <AdminProfile /> },

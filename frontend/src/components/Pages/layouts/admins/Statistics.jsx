@@ -15,7 +15,7 @@ const EMPTY_DATA = {
   kpis: { newUsers: 0, enrollments: 0, rating: "0.0" },
 };
 
-export function AdminReports() {
+export function AdminStatistics() {
   const [reports, setReports]         = useState(EMPTY_DATA);
   const [activeRange, setActiveRange] = useState("Last 6 Months");
   const [loading, setLoading]         = useState(true);
