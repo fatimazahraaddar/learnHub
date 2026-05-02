@@ -4,32 +4,32 @@ import {
 } from "lucide-react";
 import {
   fetchProfile, getStoredUser, getUserDisplayData, mergeStoredUser, saveProfile, apiRequest,
-} from "../../../../lib/api";
-
- export const Skills = () => {
+} from "../../../../api";
+ 
+export const Skills = () => {
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+ 
   useEffect(() => {
     const fetchSkills = async () => {
       try {
-        const response = await fetch("/api/skills"); // 👈 adaptez l'URL
+        const response = await fetch("/api/skills");
         const data = await response.json();
         setSkills(data);
       } catch {
-  setError("Erreur lors du chargement des skills");
+        setError("Erreur lors du chargement des skills");
       } finally {
         setLoading(false);
       }
     };
-
+ 
     fetchSkills();
   }, []);
-
+ 
   if (loading) return <div className="card mb-4"><div className="card-body">Chargement...</div></div>;
   if (error) return <div className="card mb-4"><div className="card-body text-danger">{error}</div></div>;
-
+ 
   return (
     <div className="card mb-4">
       <div className="card-body">
@@ -43,14 +43,14 @@ import {
     </div>
   );
 };
-
+ 
 export function LearnerProfile() {
   const imageInputRef = useRef(null);
   const user = getUserDisplayData();
   const storedUser = getStoredUser();
   const accountId = Number(storedUser?.id || 0);
   const role = String(storedUser?.role || "learner");
-
+ 
   const [form, setForm] = useState({
     firstName: user.firstName || "Learner",
     lastName:  user.lastName  || "",
@@ -63,70 +63,102 @@ export function LearnerProfile() {
     github:    "",
     image:     "",
   });
-
+ 
   const [stats, setStats] = useState({ courses: 0, certificates: 0, hours: "0h", score: "0%" });
   const [saved, setSaved] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-
+ 
   const handleChange = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-
+ 
   const handleImageFile = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => handleChange("image", typeof reader.result === "string" ? reader.result : "");
-    reader.readAsDataURL(file);
+    handleChange("image", file);
   };
-
+ 
+  // ✅ FIX: wrapped in try/catch, safe optional chaining on res?.data
   useEffect(() => {
     let mounted = true;
     const loadProfile = async () => {
       if (!accountId) return;
-      const { data } = await fetchProfile(role, accountId);
-      if (!mounted) return;
-      if (data.status && data.profile) setForm((prev) => ({ ...prev, ...data.profile }));
+      try {
+        const res = await fetchProfile(role, accountId);
+        const data = res?.data;
+        if (!mounted || !data) return;
+        if (data.status && data.profile) setForm((prev) => ({ ...prev, ...data.profile }));
+      } catch (err) {
+        console.error("Failed to load profile:", err);
+      }
     };
     loadProfile();
     return () => { mounted = false; };
   }, [accountId, role]);
-
+ 
+  // ✅ FIX: wrapped in try/catch, safe optional chaining on each res?.data
   useEffect(() => {
     if (!accountId) return;
     const loadStats = async () => {
-      const [enrollRes, certRes] = await Promise.all([
-        apiRequest("enrollments"),
-        apiRequest("certificates"),
-      ]);
-      const enrollments = Array.isArray(enrollRes.data) ? enrollRes.data
-        : Array.isArray(enrollRes.data?.data) ? enrollRes.data.data : [];
-      const certs = Array.isArray(certRes.data) ? certRes.data
-        : Array.isArray(certRes.data?.data) ? certRes.data.data : [];
-
-      const userEnrollments = enrollments.filter(e => Number(e.user_id) === accountId);
-      const userCerts       = certs.filter(c => Number(c.user_id) === accountId);
-
-      setStats({
-        courses:      userEnrollments.length,
-        certificates: userCerts.length,
-        hours:        "0h",
-        score:        "0%",
-      });
+      try {
+        const [enrollRes, certRes] = await Promise.all([
+          apiRequest("enrollments"),
+          apiRequest("certificates"),
+        ]);
+ 
+        const enrollData = enrollRes?.data;
+        const certData   = certRes?.data;
+ 
+        const enrollments = Array.isArray(enrollData) ? enrollData
+          : Array.isArray(enrollData?.data) ? enrollData.data : [];
+        const certs = Array.isArray(certData) ? certData
+          : Array.isArray(certData?.data) ? certData.data : [];
+ 
+        const userEnrollments = enrollments.filter(e => Number(e.user_id) === accountId);
+        const userCerts       = certs.filter(c => Number(c.user_id) === accountId);
+ 
+        setStats({
+          courses:      userEnrollments.length,
+          certificates: userCerts.length,
+          hours:        "0h",
+          score:        "0%",
+        });
+      } catch (err) {
+        console.error("Failed to load stats:", err);
+      }
     };
     loadStats();
   }, [accountId]);
-
+ 
+  // ✅ FIX: wrapped in try/catch, safe optional chaining on res?.data
   const handleSave = async () => {
     if (!accountId) { setStatusMessage("Session user missing."); return; }
-    const { data } = await saveProfile(role, accountId, form);
-    if (!data.status) { setStatusMessage(data.message || "Save failed"); return; }
-    if (data.profile) setForm((prev) => ({ ...prev, ...data.profile }));
-    const fullName = `${form.firstName} ${form.lastName}`.trim();
-    mergeStoredUser({ name: fullName, email: form.email, image: form.image });
-    setSaved(true);
-    setStatusMessage("Profile updated successfully.");
-    setTimeout(() => setSaved(false), 1600);
+ 
+    try {
+      const res = await saveProfile(role, accountId, form);
+      const data = res?.data;
+ 
+      if (!data) {
+        setStatusMessage("Unexpected response from server.");
+        return;
+      }
+ 
+      if (!data.status) {
+        setStatusMessage(data.message || "Save failed");
+        return;
+      }
+ 
+      if (data.profile) setForm((prev) => ({ ...prev, ...data.profile }));
+ 
+      const fullName = `${form.firstName} ${form.lastName}`.trim();
+      mergeStoredUser({ name: fullName, email: form.email, image: form.image });
+      setSaved(true);
+      setStatusMessage("Profile updated successfully.");
+      setTimeout(() => setSaved(false), 1600);
+    } catch (err) {
+      console.error("Save error:", err);
+      setStatusMessage("Save failed: " + (err.message || "Unknown error"));
+    }
   };
-
+ 
   return (
     <div className="container my-4">
       <div className="card shadow-sm mb-4">
@@ -136,7 +168,8 @@ export function LearnerProfile() {
             <div className="position-relative" style={{ width: 100, height: 100 }}>
               {form.image ? (
                 <img
-                  src={form.image} width="100" height="100"
+                  src={typeof form.image === "string" ? form.image : URL.createObjectURL(form.image)}
+                  width="100" height="100"
                   className="rounded-circle border border-3" alt="profile"
                   onError={(e) => { e.target.style.display = "none"; }}
                 />
@@ -160,7 +193,7 @@ export function LearnerProfile() {
               {statusMessage && <p className="small text-muted mb-0 mt-2">{statusMessage}</p>}
             </div>
           </div>
-
+ 
           <div className="mt-3">
             <h4>{form.firstName} {form.lastName}</h4>
             <p className="text-muted">{form.location || "No location set"}</p>
@@ -173,7 +206,7 @@ export function LearnerProfile() {
           </div>
         </div>
       </div>
-
+ 
       <div className="row">
         <div className="col-lg-8">
           <div className="card mb-4">
@@ -194,11 +227,13 @@ export function LearnerProfile() {
                   </div>
                 ))}
               </div>
-
+ 
               <div className="mb-3">
                 <label className="form-label">Profile Image URL</label>
-                <input className="form-control" value={form.image}
-                  onChange={(e) => handleChange("image", e.target.value)} placeholder="https://..." />
+                <input className="form-control"
+                  value={typeof form.image === "string" ? form.image : ""}
+                  onChange={(e) => handleChange("image", e.target.value)}
+                  placeholder="https://..." />
               </div>
               <div className="mb-3">
                 <label className="form-label">Or Upload Image</label>
@@ -212,7 +247,7 @@ export function LearnerProfile() {
               </div>
             </div>
           </div>
-
+ 
           <div className="card">
             <div className="card-body">
               <h5 className="mb-3">Social Links</h5>
@@ -233,7 +268,7 @@ export function LearnerProfile() {
             </div>
           </div>
         </div>
-
+ 
         <div className="col-lg-4">
           <div className="card mb-4">
             <div className="card-body">
@@ -257,8 +292,7 @@ export function LearnerProfile() {
               </div>
             </div>
           </div>
-
-
+ 
           <div className="card text-white" style={{ background: "linear-gradient(135deg,#4A90E2,#7F3FBF)" }}>
             <div className="card-body">
               <h6>7-Day Streak</h6>

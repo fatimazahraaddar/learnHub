@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { Users, BookOpen, Star } from "lucide-react";
-import { fetchTrainerOverviewData, getStoredUser } from "../../../../lib/api";
+import { fetchTrainerOverviewData, getStoredUser } from "../../../../api";
 import { resolveCourseImage } from "../../../../lib/courseImage";
 
 const PIE_COLORS = ["#4A90E2", "#7F3FBF", "#FF7A00", "#28A745", "#EF4444"];

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, AlertCircle, CheckCircle, Info, Trash2, Check, Loader2, RefreshCw } from "lucide-react";
-import { fetchAdminNotificationsData } from "../../../../lib/api";
+import { fetchAdminNotificationsData } from "../../../../api";
 
 const TYPE_CONFIG = {
   warning: { icon: AlertCircle, color: "#FF7A00", bg: "#FFF3E8" },

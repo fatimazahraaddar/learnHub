@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Award, Download, Search, Filter, CheckCircle, X } from "lucide-react";
-import { fetchAdminCertificatesData } from "../../../../lib/api";
+import { fetchAdminCertificatesData } from "../../../../api";
 
 const STATUS_COLORS = {
   Valid:   { bg: "#F0FFF4", color: "#28A745" },

@@ -4,7 +4,7 @@ import {
   ResponsiveContainer, AreaChart, Area,
 } from "recharts";
 import { Download, TrendingUp, Users, BookOpen, Star } from "lucide-react";
-import { fetchAdminReportsData } from "../../../../lib/api";
+import { fetchAdminReportsData } from "../../../../api";
 
 const RANGE_OPTIONS = ["This Month", "Last 6 Months", "This Year"];
 

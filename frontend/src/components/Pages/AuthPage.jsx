@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { CheckCircle, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getDashboardRouteByRole, loginUser, registerUser } from "../../lib/api";
-
+import { getDashboardRouteByRole, loginUser, registerUser } from "../../api";
+ 
 const PRIMARY = "#1E3A5F";
 const ACCENT  = "#10B981";
-
+ 
 export function AuthPage() {
   const navigate = useNavigate();
   const [isSignup, setIsSignup]         = useState(false);
@@ -15,13 +15,13 @@ export function AuthPage() {
   const [password, setPassword]         = useState("");
   const [message, setMessage]           = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+ 
   const switchMode = (nextIsSignup) => {
     if (isSubmitting || nextIsSignup === isSignup) return;
     setIsSignup(nextIsSignup);
     setMessage("");
   };
-
+ 
   const handleRegister = async () => {
     if (isSubmitting) return;
     if (!name || !email || !password) { setMessage("Please fill required fields"); return; }
@@ -45,7 +45,7 @@ export function AuthPage() {
     } catch { setMessage("Cannot reach server. Start backend API and try again."); }
     finally { setIsSubmitting(false); }
   };
-
+ 
   const handleLogin = async () => {
     if (isSubmitting) return;
     if (!email || !password) { setMessage("Email and password are required"); return; }
@@ -61,25 +61,23 @@ export function AuthPage() {
     } catch { setMessage("Cannot reach server. Start backend API and try again."); }
     finally { setIsSubmitting(false); }
   };
-
+ 
   const inputStyle = { border: `1px solid ${PRIMARY}22`, borderRadius: "10px" };
-
+ 
   return (
     <div className="container-fluid p-0">
       <div className="row g-0 vh-100">
-
+ 
         {/* ── LEFT PANEL ── */}
         <div className="col-lg-6 d-none d-lg-flex flex-column justify-content-center text-white p-5 position-relative overflow-hidden"
           style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, #16324F 100%)` }}>
-
-          {/* blobs */}
+ 
           <div className="position-absolute rounded-circle"
             style={{ width: "20rem", height: "20rem", top: "-5rem", right: "-5rem", filter: "blur(4rem)", backgroundColor: ACCENT, opacity: 0.12 }} />
           <div className="position-absolute rounded-circle"
             style={{ width: "16rem", height: "16rem", bottom: "-4rem", left: "-4rem", filter: "blur(4rem)", backgroundColor: ACCENT, opacity: 0.1 }} />
-
+ 
           <div className="position-relative">
-            {/* logo */}
             <div className="d-flex align-items-center gap-2 mb-5">
               <div className="d-flex align-items-center justify-content-center rounded"
                 style={{ width: "36px", height: "36px", background: `linear-gradient(135deg, ${ACCENT}, #059669)` }}>
@@ -87,17 +85,17 @@ export function AuthPage() {
               </div>
               <span className="fs-4 fw-bold">Learn<span style={{ color: ACCENT }}>Hub</span></span>
             </div>
-
+ 
             <span className="badge px-3 py-2 rounded-pill mb-4"
               style={{ background: `${ACCENT}33`, color: ACCENT, fontWeight: 600 }}>
               #1 E-Learning Platform 2026
             </span>
-
+ 
             <h1 className="fw-bold mb-4" style={{ fontSize: "clamp(1.8rem,3vw,2.6rem)", lineHeight: 1.2 }}>
               Start Your Learning <br />
               <span style={{ color: ACCENT }}>Journey Today</span>
             </h1>
-
+ 
             <ul className="list-unstyled mt-4">
               {[
                 "Access 1,200+ expert courses",
@@ -116,12 +114,12 @@ export function AuthPage() {
             </ul>
           </div>
         </div>
-
+ 
         {/* ── RIGHT PANEL ── */}
         <div className="col-lg-6 d-flex align-items-center justify-content-center"
           style={{ background: "#F4F7FB" }}>
           <div className="bg-white p-4 rounded-4 shadow-sm" style={{ width: "420px", border: `1px solid ${PRIMARY}12` }}>
-
+ 
             {/* tabs */}
             <div className="d-flex mb-4 rounded-pill p-1" style={{ background: "#F4F7FB" }}>
               {[{ label: "Sign In", value: false }, { label: "Create Account", value: true }].map(({ label, value }) => (
@@ -136,30 +134,29 @@ export function AuthPage() {
                 </button>
               ))}
             </div>
-
-            {/* message erreur */}
+ 
             {message && (
               <div className="alert py-2 small mb-3"
                 style={{ background: "#FFF0F0", color: "#DC2626", border: "1px solid #FECACA", borderRadius: "10px" }}>
                 {message}
               </div>
             )}
-
+ 
             {/* ── SIGN IN ── */}
             {!isSignup ? (
               <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
                 <h4 className="fw-bold mb-1" style={{ color: PRIMARY }}>Welcome back!</h4>
                 <p className="text-muted mb-4 small">Sign in to continue your learning journey.</p>
-
+ 
                 <div className="mb-3">
                   <label className="form-label fw-medium small" style={{ color: PRIMARY }}>Email</label>
-                  <input type="email" className="form-control" style={inputStyle}
+                  <input type="email" className="form-control" style={inputStyle} autoComplete="email"
                     value={email} onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email" />
                 </div>
                 <div className="mb-4">
                   <label className="form-label fw-medium small" style={{ color: PRIMARY }}>Password</label>
-                  <input type="password" className="form-control" style={inputStyle}
+                  <input type="password" className="form-control" style={inputStyle} autoComplete="current-password"
                     value={password} onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password" />
                 </div>
@@ -173,14 +170,14 @@ export function AuthPage() {
                     onClick={() => switchMode(true)}>Create one</span>
                 </p>
               </form>
-
+ 
             ) : (
-
+ 
               /* ── SIGN UP ── */
               <form onSubmit={(e) => { e.preventDefault(); handleRegister(); }}>
                 <h4 className="fw-bold mb-1" style={{ color: PRIMARY }}>Create your account</h4>
                 <p className="text-muted mb-4 small">Join 500,000+ learners. Free to start.</p>
-
+ 
                 <div className="row g-3 mb-3">
                   <div className="col-6">
                     <label className="form-label fw-medium small" style={{ color: PRIMARY }}>First Name</label>
@@ -197,13 +194,13 @@ export function AuthPage() {
                 </div>
                 <div className="mb-3">
                   <label className="form-label fw-medium small" style={{ color: PRIMARY }}>Email</label>
-                  <input type="email" className="form-control" style={inputStyle}
+                  <input type="email" className="form-control" style={inputStyle} autoComplete="email"
                     value={email} onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email" />
                 </div>
                 <div className="mb-4">
                   <label className="form-label fw-medium small" style={{ color: PRIMARY }}>Password</label>
-                  <input type="password" className="form-control" style={inputStyle}
+                  <input type="password" className="form-control" style={inputStyle} autoComplete="new-password"
                     value={password} onChange={(e) => setPassword(e.target.value)}
                     placeholder="Create a password" />
                 </div>

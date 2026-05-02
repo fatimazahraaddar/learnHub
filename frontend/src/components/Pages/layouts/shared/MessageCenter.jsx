@@ -5,7 +5,7 @@ import {
   fetchMessageContacts,
   getStoredUser,
   sendConversationMessage,
-} from "../../../../lib/api";
+} from "../../../../api";
 
 const ROLE_LABELS = {
   learner: "Learner",

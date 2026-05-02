@@ -1,52 +1,109 @@
 import { useEffect, useState } from "react";
-import { Search, Calendar, Clock, ArrowRight } from "lucide-react";
+import { Search, Calendar, Clock, ArrowRight, BookOpen, Timer } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { fetchBlogPosts, fetchPublicCategories } from "../../lib/api";
-
+import { fetchBlogPosts, fetchPublicCategories, fetchCourses } from "../../api";
+import { resolveCourseImage } from "../../lib/courseImage";
+ 
 const PRIMARY = "#1E3A5F";
 const ACCENT  = "#10B981";
-
+ 
 export function BlogPage() {
   const navigate = useNavigate();
-  const [search, setSearch]                 = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [posts, setPosts]                   = useState([]);
-  const [categories, setCategories]         = useState([]);
-  const [message, setMessage]               = useState("");
+  const [search, setSearch]                   = useState("");
+  const [activeCategory, setActiveCategory]   = useState("All");
+  const [posts, setPosts]                     = useState([]);
+  const [categories, setCategories]           = useState([]);
+  const [courses, setCourses]                 = useState([]);
+  const [loading, setLoading]                 = useState(true);
+  const [message, setMessage]                 = useState("");
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterInfo, setNewsletterInfo]   = useState("");
-
+ 
   useEffect(() => {
     const load = async () => {
-      const [postsRes, categoriesRes] = await Promise.all([
-        fetchBlogPosts(),
-        fetchPublicCategories(),
-      ]);
-      if (!postsRes.ok) setMessage("Unable to load blog posts.");
-      setPosts(Array.isArray(postsRes.data) ? postsRes.data : []);
-      setCategories(Array.isArray(categoriesRes.data) ? categoriesRes.data : []);
+      try {
+        setLoading(true);
+        const [postsRes, categoriesRes, coursesRes] = await Promise.all([
+          fetchBlogPosts(),
+          fetchPublicCategories(),
+          fetchCourses(),
+        ]);
+ 
+        const loadedPosts   = Array.isArray(postsRes.data)        ? postsRes.data        : [];
+        const loadedCats    = Array.isArray(categoriesRes.data)   ? categoriesRes.data   : [];
+        const loadedCourses = coursesRes.ok && coursesRes.data?.courses
+          ? coursesRes.data.courses
+          : [];
+ 
+        if (!postsRes.ok || loadedPosts.length === 0) {
+  // N'afficher le message que si vraiment rien n'est disponible
+  if (loadedCourses.length === 0) {
+    setMessage("No blog posts found yet.");
+  }
+}
+ 
+        setPosts(loadedPosts);
+        setCourses(loadedCourses);
+ 
+        const postCategories = [...new Set(loadedPosts.map((p) => p.category).filter(Boolean))];
+        const catNames = [...new Set([
+          ...loadedCats.map((c) => c.name),
+          ...postCategories,
+        ])];
+        setCategories(catNames);
+      } catch (err) {
+        console.error("BlogPage load error:", err);
+        setMessage("Unable to load blog posts.");
+      } finally {
+        setLoading(false);
+      }
     };
     load();
   }, []);
-
+ 
+  const normalize = (str) => String(str || "").toLowerCase().trim();
+ 
+  // Filter posts by search + category
   const filtered = posts.filter((p) => {
-    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase());
-    const matchCat = activeCategory === "All" || p.category === activeCategory;
+    const matchSearch = normalize(p.title).includes(normalize(search));
+    const matchCat =
+      activeCategory === "All" ||
+      normalize(p.category) === normalize(activeCategory);
     return matchSearch && matchCat;
   });
-
-  const featured = posts[0];
-
+ 
+  // Filter courses by category (search also applied)
+  const filteredCourses = courses.filter((c) => {
+    const matchSearch =
+      !search.trim() ||
+      normalize(c.title).includes(normalize(search)) ||
+      normalize(c.description).includes(normalize(search));
+    const matchCat =
+      activeCategory === "All" ||
+      normalize(c.category) === normalize(activeCategory);
+    return matchSearch && matchCat;
+  });
+ 
+  const featured =
+    activeCategory === "All" && !search.trim() ? posts[0] : null;
+ 
+  const gridPosts = featured
+    ? filtered.filter((p) => p.id !== featured.id)
+    : filtered;
+ 
   return (
     <div style={{ backgroundColor: "#F4F7FB" }} className="min-vh-100">
-      {message && <div className="alert alert-warning m-3">{message}</div>}
-
+ 
       {/* ── HERO ── */}
-      <div className="py-5 text-center text-white"
-        style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, #16324F 100%)` }}>
+      <div
+        className="py-5 text-center text-white"
+        style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, #16324F 100%)` }}
+      >
         <div className="container">
-          <span className="badge px-3 py-2 rounded-pill mb-3"
-            style={{ background: `${ACCENT}33`, color: ACCENT, fontSize: "0.85rem", fontWeight: 600 }}>
+          <span
+            className="badge px-3 py-2 rounded-pill mb-3"
+            style={{ background: `${ACCENT}33`, color: ACCENT, fontSize: "0.85rem", fontWeight: 600 }}
+          >
             Blog & Resources
           </span>
           <h1 className="fw-bold mb-3" style={{ fontSize: "clamp(1.8rem,4vw,2.8rem)" }}>
@@ -55,48 +112,160 @@ export function BlogPage() {
           <p className="mb-4" style={{ opacity: 0.75 }}>
             Expert insights, career tips, and learning strategies.
           </p>
-          <div className="d-flex align-items-center bg-white rounded-3 px-3 py-2 shadow mx-auto"
-            style={{ maxWidth: "520px", border: `2px solid ${ACCENT}44` }}>
+          <div
+            className="d-flex align-items-center bg-white rounded-3 px-3 py-2 shadow mx-auto"
+            style={{ maxWidth: "520px", border: `2px solid ${ACCENT}44` }}
+          >
             <Search size={16} color={ACCENT} className="me-2 flex-shrink-0" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="form-control border-0 shadow-none p-0"
-              placeholder="Search articles..."
+              placeholder="Search articles and courses..."
               style={{ fontSize: "0.95rem" }}
             />
           </div>
         </div>
       </div>
-
+ 
       <div className="container py-5">
-
+ 
+        {message && (
+          <div className="alert alert-warning mb-4">{message}</div>
+        )}
+ 
         {/* ── FILTERS ── */}
         <div className="mb-4 d-flex flex-wrap gap-2">
-          {["All", ...categories.map(c => c.name)].map((cat) => (
-            <button key={cat} type="button"
+          {["All", ...categories].map((cat) => (
+            <button
+              key={cat}
+              type="button"
               onClick={() => setActiveCategory(cat)}
               className="btn fw-medium"
-              style={activeCategory === cat
-                ? { background: PRIMARY, color: "white", borderRadius: "10px", border: "none" }
-                : { background: "white", color: PRIMARY, borderRadius: "10px", border: `1px solid ${PRIMARY}33` }}>
+              style={
+                activeCategory === cat
+                  ? { background: PRIMARY, color: "white", borderRadius: "10px", border: "none" }
+                  : { background: "white", color: PRIMARY, borderRadius: "10px", border: `1px solid ${PRIMARY}33` }
+              }
+            >
               {cat}
             </button>
           ))}
         </div>
-
-        {/* ── FEATURED ── */}
-        {activeCategory === "All" && !search && featured && (
-          <div className="card mb-5 border-0 rounded-4 overflow-hidden"
-            style={{ boxShadow: `0 8px 32px ${PRIMARY}18` }}>
+ 
+        {/* ── LOADING ── */}
+        {loading && (
+          <div className="row g-4 mb-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="col-md-6 col-lg-4">
+                <div
+                  className="card h-100 border-0 rounded-4"
+                  style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
+                >
+                  <div style={{ height: "200px", background: "#e9ecef", borderRadius: "16px 16px 0 0", animation: "skeletonPulse 1.4s ease-in-out infinite" }} />
+                  <div className="card-body">
+                    <div style={{ height: "1rem", background: "#f0f2f5", borderRadius: 6, marginBottom: 10, animation: "skeletonPulse 1.4s ease-in-out infinite" }} />
+                    <div style={{ height: "0.8rem", background: "#f0f2f5", borderRadius: 6, width: "70%", animation: "skeletonPulse 1.4s ease-in-out infinite 0.2s" }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+ 
+        {/* ── COURSES SECTION ── */}
+        {!loading && filteredCourses.length > 0 && (
+          <div className="mb-5">
+            <div className="d-flex align-items-center justify-content-between mb-3">
+              <div>
+                <p className="mb-0 fw-semibold small" style={{ color: ACCENT, letterSpacing: "1px", textTransform: "uppercase" }}>
+                  Formations
+                </p>
+                <h5 className="fw-bold mb-0" style={{ color: PRIMARY }}>Cours disponibles</h5>
+              </div>
+              <button
+                className="btn btn-sm fw-semibold"
+                type="button"
+                style={{ background: `${PRIMARY}11`, color: PRIMARY, borderRadius: "8px", border: "none" }}
+                onClick={() => navigate("/courses")}
+              >
+                Voir tout <ArrowRight size={13} />
+              </button>
+            </div>
+ 
+            <div className="row g-3">
+              {filteredCourses.map((course) => (
+                <div key={course.id} className="col-sm-6 col-lg-3">
+                  <div
+                    className="card h-100 border-0 rounded-4"
+                    style={{
+                      boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
+                      transition: "transform .2s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-4px)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                    onClick={() => navigate(`/courses/${course.id}`)}
+                  >
+                    <img
+                      src={resolveCourseImage(course.image, course.title)}
+                      className="card-img-top rounded-top-4"
+                      style={{ height: "140px", objectFit: "cover" }}
+                      alt={course.title}
+                    />
+                    <div className="card-body pb-2">
+                      {course.category && (
+                        <span
+                          className="badge mb-2"
+                          style={{ background: `${ACCENT}18`, color: ACCENT, borderRadius: "6px", fontWeight: 500 }}
+                        >
+                          {course.category}
+                        </span>
+                      )}
+                      <h6 className="fw-bold mb-1" style={{ color: PRIMARY, fontSize: "0.875rem" }}>
+                        {course.title}
+                      </h6>
+                      {course.description && (
+                        <p className="text-muted small mb-0" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          {course.description}
+                        </p>
+                      )}
+                    </div>
+                    {course.duration && (
+                      <div className="card-footer bg-white border-0 pt-0 pb-3 d-flex align-items-center gap-1 small text-muted">
+                        <Timer size={12} />
+                        {course.duration}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+ 
+            <hr className="my-5" style={{ borderColor: `${PRIMARY}18` }} />
+          </div>
+        )}
+ 
+        {/* ── FEATURED ARTICLE ── */}
+        {!loading && featured && (
+          <div
+            className="card mb-5 border-0 rounded-4 overflow-hidden"
+            style={{ boxShadow: `0 8px 32px ${PRIMARY}18` }}
+          >
             <div className="row g-0">
               <div className="col-lg-6">
-                <img src={featured.image} className="img-fluid h-100 w-100"
-                  style={{ objectFit: "cover", minHeight: "280px" }} alt={featured.title} />
+                <img
+                  src={featured.image}
+                  className="img-fluid h-100 w-100"
+                  style={{ objectFit: "cover", minHeight: "280px" }}
+                  alt={featured.title}
+                />
               </div>
               <div className="col-lg-6 p-4 d-flex flex-column justify-content-center">
-                <span className="badge px-3 py-2 rounded-pill mb-3 align-self-start"
-                  style={{ background: `${ACCENT}22`, color: ACCENT, fontWeight: 600 }}>
+                <span
+                  className="badge px-3 py-2 rounded-pill mb-3 align-self-start"
+                  style={{ background: `${ACCENT}22`, color: ACCENT, fontWeight: 600 }}
+                >
                   {featured.category}
                 </span>
                 <h4 className="fw-bold mb-2" style={{ color: PRIMARY }}>{featured.title}</h4>
@@ -109,52 +278,93 @@ export function BlogPage() {
                     <Clock size={14} /> {featured.readTime}
                   </span>
                 </div>
-                <button className="btn fw-semibold align-self-start d-flex align-items-center gap-2" type="button"
+                <button
+                  className="btn fw-semibold align-self-start d-flex align-items-center gap-2"
+                  type="button"
                   style={{ background: PRIMARY, color: "white", borderRadius: "10px", border: "none" }}
-                  onClick={() => navigate(`/blog?post=${featured.id}`)}>
+                  onClick={() => navigate(`/blog?post=${featured.id}`)}
+                >
                   Read More <ArrowRight size={14} />
                 </button>
               </div>
             </div>
           </div>
         )}
-
-        {/* ── GRID ── */}
-        <div className="row g-4">
-          {filtered.map((post) => (
-            <div key={post.id} className="col-md-6 col-lg-4">
-              <div className="card h-100 border-0 rounded-4"
-                style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)", transition: "transform .2s" }}
-                onMouseEnter={e => e.currentTarget.style.transform = "translateY(-4px)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}>
-                <img src={post.image} className="card-img-top rounded-top-4"
-                  style={{ height: "200px", objectFit: "cover" }} alt={post.title} />
-                <div className="card-body">
-                  <div className="small text-muted mb-2 d-flex align-items-center gap-2">
-                    <Calendar size={12} /> {post.date} •
-                    <Clock size={12} /> {post.readTime}
-                  </div>
-                  <h6 className="fw-bold mb-1" style={{ color: PRIMARY }}>{post.title}</h6>
-                  <p className="text-muted small mb-0">{post.excerpt}</p>
-                </div>
-                <div className="card-footer bg-white border-0 d-flex justify-content-between align-items-center pb-3">
-                  <small className="text-muted">{post.author}</small>
-                  <button className="btn btn-sm fw-semibold" type="button"
-                    style={{ background: `${ACCENT}18`, color: ACCENT, borderRadius: "8px", border: "none" }}
-                    onClick={() => navigate(`/blog?post=${post.id}`)}>
-                    Read <ArrowRight size={12} />
+ 
+        {/* ── ARTICLES GRID ── */}
+        {!loading && (
+          <>
+            {gridPosts.length === 0 && filteredCourses.length === 0 ? (
+              <div className="text-center py-5">
+                <p className="text-muted fs-5">No articles found{search ? ` for "${search}"` : ""}.</p>
+                {search && (
+                  <button
+                    className="btn btn-sm mt-2"
+                    style={{ background: PRIMARY, color: "white", borderRadius: "8px", border: "none" }}
+                    onClick={() => setSearch("")}
+                  >
+                    Clear search
                   </button>
-                </div>
+                )}
               </div>
-            </div>
-          ))}
-        </div>
-
+            ) : gridPosts.length > 0 ? (
+              <div className="row g-4">
+                {gridPosts.map((post) => (
+                  <div key={post.id} className="col-md-6 col-lg-4">
+                    <div
+                      className="card h-100 border-0 rounded-4"
+                      style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)", transition: "transform .2s" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-4px)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+                    >
+                      <img
+                        src={post.image}
+                        className="card-img-top rounded-top-4"
+                        style={{ height: "200px", objectFit: "cover" }}
+                        alt={post.title}
+                      />
+                      <div className="card-body">
+                        <span
+                          className="badge mb-2"
+                          style={{ background: `${ACCENT}18`, color: ACCENT, borderRadius: "6px", fontWeight: 500 }}
+                        >
+                          {post.category}
+                        </span>
+                        <div className="small text-muted mb-2 d-flex align-items-center gap-2">
+                          <Calendar size={12} /> {post.date} •
+                          <Clock size={12} /> {post.readTime}
+                        </div>
+                        <h6 className="fw-bold mb-1" style={{ color: PRIMARY }}>{post.title}</h6>
+                        <p className="text-muted small mb-0">{post.excerpt}</p>
+                      </div>
+                      <div className="card-footer bg-white border-0 d-flex justify-content-between align-items-center pb-3">
+                        <small className="text-muted">{post.author}</small>
+                        <button
+                          className="btn btn-sm fw-semibold"
+                          type="button"
+                          style={{ background: `${ACCENT}18`, color: ACCENT, borderRadius: "8px", border: "none" }}
+                          onClick={() => navigate(`/blog?post=${post.id}`)}
+                        >
+                          Read <ArrowRight size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </>
+        )}
+ 
         {/* ── NEWSLETTER ── */}
-        <div className="text-center p-5 mt-5 rounded-4"
-          style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, #16324F 100%)`, boxShadow: `0 8px 32px ${PRIMARY}44` }}>
-          <span className="badge px-3 py-2 rounded-pill mb-3"
-            style={{ background: `${ACCENT}33`, color: ACCENT, fontWeight: 600 }}>
+        <div
+          className="text-center p-5 mt-5 rounded-4"
+          style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, #16324F 100%)`, boxShadow: `0 8px 32px ${PRIMARY}44` }}
+        >
+          <span
+            className="badge px-3 py-2 rounded-pill mb-3"
+            style={{ background: `${ACCENT}33`, color: ACCENT, fontWeight: 600 }}
+          >
             Newsletter
           </span>
           <h4 className="text-white fw-bold mb-2">Stay in the Loop</h4>
@@ -169,7 +379,9 @@ export function BlogPage() {
               onChange={(e) => setNewsletterEmail(e.target.value)}
               style={{ background: "rgba(255,255,255,0.1)", border: `1px solid ${ACCENT}55`, color: "white", borderRadius: "10px" }}
             />
-            <button className="btn fw-semibold px-4" type="button"
+            <button
+              className="btn fw-semibold px-4"
+              type="button"
               style={{ background: ACCENT, color: "white", borderRadius: "10px", border: "none", whiteSpace: "nowrap" }}
               onClick={() => {
                 if (!newsletterEmail.trim() || !newsletterEmail.includes("@")) {
@@ -178,7 +390,8 @@ export function BlogPage() {
                 }
                 setNewsletterInfo("Subscribed successfully ✓");
                 setNewsletterEmail("");
-              }}>
+              }}
+            >
               Subscribe
             </button>
           </div>
@@ -186,8 +399,15 @@ export function BlogPage() {
             <p className="small mt-3 mb-0" style={{ color: ACCENT }}>{newsletterInfo}</p>
           )}
         </div>
-
+ 
       </div>
+ 
+      <style>{`
+        @keyframes skeletonPulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.45; }
+        }
+      `}</style>
     </div>
   );
 }

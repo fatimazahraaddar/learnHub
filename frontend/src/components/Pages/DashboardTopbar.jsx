@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Bell, Search, MessageSquare } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getUserDisplayData, subscribeUserChanges } from "../../lib/api";
+import { getUserDisplayData, subscribeUserChanges } from "../../api";
 
 export function DashboardTopbar({ title, subtitle }) {
   const navigate = useNavigate();
@@ -47,31 +47,34 @@ export function DashboardTopbar({ title, subtitle }) {
           />
         </div>
 
-        <button
-          className="position-relative p-2 rounded border-0 bg-transparent"
-          type="button"
-          onClick={() => navigate(notificationsRoute)}
-        >
-          <Bell style={{ width: 20, height: 20, color: "#6B7280" }} />
-          <span
-            className="position-absolute rounded-circle"
-            style={{ top: 4, right: 4, width: 8, height: 8, backgroundColor: "#FF7A00" }}
-          />
-        </button>
+        {dashboardBase !== "/learner" && (
+          <button
+            className="position-relative p-2 rounded border-0 bg-transparent"
+            type="button"
+            onClick={() => navigate(notificationsRoute)}
+          >
+            <Bell style={{ width: 20, height: 20, color: "#6B7280" }} />
+            <span
+              className="position-absolute rounded-circle"
+              style={{ top: 4, right: 4, width: 8, height: 8, backgroundColor: "#FF7A00" }}
+            />
+          </button>
+        )}
 
-        <button
-          className="position-relative p-2 rounded border-0 bg-transparent"
-          type="button"
-          onClick={() => navigate(`${dashboardBase}/messages`)}
-        >
-          <MessageSquare style={{ width: 20, height: 20, color: "#6B7280" }} />
-          <span
-            className="position-absolute rounded-circle"
-            style={{ top: 4, right: 4, width: 8, height: 8, backgroundColor: "#4A90E2" }}
-          />
-        </button>
+        {dashboardBase !== "/learner" && (
+          <button
+            className="position-relative p-2 rounded border-0 bg-transparent"
+            type="button"
+            onClick={() => navigate(`${dashboardBase}/messages`)}
+          >
+            <MessageSquare style={{ width: 20, height: 20, color: "#6B7280" }} />
+            <span
+              className="position-absolute rounded-circle"
+              style={{ top: 4, right: 4, width: 8, height: 8, backgroundColor: "#4A90E2" }}
+            />
+          </button>
+        )}
 
-        {/* ✅ Initiale uniquement */}
         <div
           className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white flex-shrink-0"
           style={{

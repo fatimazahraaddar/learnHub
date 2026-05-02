@@ -6,7 +6,7 @@ import {
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { CourseCard } from "../Pages/CourseCard";
-import { fetchHomePageData } from "../../lib/api";
+import { fetchHomePageData } from "../../api";
 
 const ICON_MAP = {
   code: Code, chart: BarChart2, megaphone: Megaphone, palette: Palette,
@@ -266,42 +266,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ───── TESTIMONIALS ───── */}
-      <section className="py-5" style={{ background: `linear-gradient(135deg, ${PRIMARY} 0%, #16324F 100%)` }}>
-        <div className="container">
-          <div className="text-center mb-5">
-            <span className="badge px-3 py-2 rounded-pill mb-3"
-              style={{ background: `${ACCENT}33`, color: ACCENT, fontSize: "0.85rem", fontWeight: 600 }}>
-              Testimonials
-            </span>
-            <h2 className="text-white fw-bold mb-2" style={{ fontSize: "2rem" }}>What Our Learners Say</h2>
-            <p className="text-light mx-auto" style={{ maxWidth: "36rem", opacity: 0.8 }}>
-              Real stories from learners who transformed their careers with LearnHub.
-            </p>
-          </div>
-          <div className="row g-4">
-            {homeData.testimonials.map((t) => (
-              <div key={t.id} className="col-12 col-md-6 col-lg-4">
-                <div className="h-100 p-4 rounded-4"
-                  style={{ background: "rgba(255,255,255,0.07)", backdropFilter: "blur(8px)", border: `1px solid ${ACCENT}44` }}>
-                  <div className="d-flex mb-3">
-                    {[1,2,3,4,5].map(i => <Star key={i} size={14} className="text-warning me-1" />)}
-                  </div>
-                  <p className="text-white mb-4" style={{ opacity: 0.9, lineHeight: 1.7 }}>"{t.text}"</p>
-                  <div className="d-flex align-items-center gap-3">
-                    <img src={t.avatar} className="rounded-circle" width={44} height={44}
-                      alt={t.name} style={{ objectFit: "cover", border: `2px solid ${ACCENT}` }} />
-                    <div>
-                      <p className="mb-0 fw-semibold text-white">{t.name}</p>
-                      <p className="small mb-0 text-light" style={{ opacity: 0.7 }}>{t.role}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ───── CTA ───── */}
       <section className="py-5 bg-white">

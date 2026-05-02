@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Award } from "lucide-react";
-import { fetchLearnerCertificates, getStoredUser } from "../../../../lib/api";
+import { fetchLearnerCertificates, getStoredUser } from "../../../../api";
 
 export function LearnerCertificates() {
   const [certs, setCerts] = useState([]);

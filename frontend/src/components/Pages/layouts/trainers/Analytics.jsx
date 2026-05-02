@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Star, Eye, Users, BookOpen, Loader2 } from "lucide-react";
-import { fetchTrainerAnalytics } from "../../../../lib/api";
+import { fetchTrainerAnalytics } from "../../../../api";
 
 export function TrainerAnalytics() {
   const [stats, setStats] = useState(null);

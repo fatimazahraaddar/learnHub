@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
-import { fetchLearnerCourses, getStoredUser } from "../../../../lib/api";
+import { fetchLearnerCourses, getStoredUser } from "../../../../api";
 
 export function LearnerCourses() {
   const [courses, setCourses] = useState([]);

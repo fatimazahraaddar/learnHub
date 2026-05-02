@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from "lucide-react";
-import { submitContactMessage } from "../../lib/api";
+import { submitContactMessage } from "../../api";
 
 const PRIMARY = "#1E3A5F";
 const ACCENT  = "#10B981";

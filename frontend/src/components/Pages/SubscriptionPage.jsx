@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { CheckCircle, X, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { fetchSubscriptionPlans } from "../../lib/api";
+import { fetchSubscriptionPlans } from "../../api";
 
 export function SubscriptionPage() {
   const navigate = useNavigate();

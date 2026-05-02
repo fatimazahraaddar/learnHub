@@ -1,5 +1,6 @@
+// src/router.jsx
+
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
-//import { useEffect, useState } from "react";
 
 // Layouts et Pages Publiques
 import { PublicLayout } from "./Pages/publicLayout";
@@ -19,7 +20,6 @@ import { LearnerCourses } from "./Pages/layouts/learners/Courses";
 import { LearnerLessons } from "./Pages/layouts/learners/Lessons";
 import { LearnerDiscussion } from "./Pages/layouts/learners/Discussion";
 import { LearnerCertificates } from "./Pages/layouts/learners/Certificates";
-
 import { LearnerProfile } from "./Pages/layouts/learners/Profile";
 
 // Trainer imports
@@ -43,8 +43,8 @@ import { AdminSettings } from "./Pages/layouts/admins/Settings";
 import { AdminTrainers } from "./Pages/layouts/admins/Trainers";
 import { AdminProfile } from "./Pages/layouts/admins/Profile";
 
-
-import { getStoredUser } from "../lib/api";
+// ✅ Import corrigé
+import { getStoredUser } from "../api";
 
 // Composant de Protection des Routes
 function ProtectedRoute({ allowedRole }) {

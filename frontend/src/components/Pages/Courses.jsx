@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Search, X } from "lucide-react";
 import { CourseCard } from "../Pages/CourseCard";
-import { fetchCourses } from "../../lib/api";
+import { fetchCourses } from "../../api";
 
 const PRIMARY = "#1E3A5F";
 const ACCENT = "#10B981";

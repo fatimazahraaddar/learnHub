@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Clock, BookOpen, ArrowLeft } from "lucide-react";
-import { enrollInCourse, fetchCourseById, getStoredUser } from "../../lib/api";
+import { enrollInCourse, fetchCourseById, getStoredUser } from "../../api";
 import { resolveCourseImage } from "../../lib/courseImage";
 
 export function CourseDetailsPage() {

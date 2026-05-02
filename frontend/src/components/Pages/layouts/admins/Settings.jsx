@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Save, Upload, Globe, Palette, Menu as MenuIcon, Bell, Shield } from "lucide-react";
-import { fetchPlatformSettings, savePlatformSettings } from "../../../../lib/api";
+import { fetchPlatformSettings, savePlatformSettings } from "../../../../api";
 
 // ✅ Payment supprimé
 const SETTING_TABS = [

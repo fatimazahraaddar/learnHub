@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import { BookOpen, LogOut } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { getUserDisplayData, logoutUser, subscribeUserChanges } from "../../lib/api";
+import { getUserDisplayData, logoutUser, subscribeUserChanges } from "../../api";
 
 export default function SidebarContent({ items, title, accentColor, setMobileOpen }) {
   const [user, setUser] = useState(getUserDisplayData());

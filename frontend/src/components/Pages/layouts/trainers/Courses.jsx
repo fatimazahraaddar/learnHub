@@ -7,7 +7,7 @@ import {
   getStoredUser,
   uploadImageFile,
   updateCourseFromForm,
-} from "../../../../lib/api";
+} from "../../../../api";
 import { resolveCourseImage } from "../../../../lib/courseImage";
 import { ActionToast } from "../../ActionToast";
 

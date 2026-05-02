@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ThumbsUp, MessageCircle, Share2, Search, Pin } from "lucide-react";
-import { fetchBlogPosts } from "../../../../lib/api";
+import { fetchBlogPosts } from "../../../../api";
 
 export function LearnerDiscussion() {
   const [newPost, setNewPost] = useState("");
@@ -68,18 +68,18 @@ export function LearnerDiscussion() {
   };
 
   return (
-    <div className="container my-4">
+    <div className="container my-4 overflow-hidden">
       <div className="card shadow-sm mb-4">
-        <div className="card-body d-flex gap-3">
+        <div className="card-body d-flex gap-3 overflow-hidden">
           <img
             src="https://images.unsplash.com/photo-1645664747204-31fee58898dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=50"
             alt="user"
-            className="rounded-circle"
+            className="rounded-circle flex-shrink-0"
             width="40"
             height="40"
           />
 
-          <div className="flex-grow-1">
+          <div className="flex-grow-1 min-width-0">
             <textarea
               className="form-control mb-3"
               rows="3"
@@ -88,7 +88,7 @@ export function LearnerDiscussion() {
               onChange={(e) => setNewPost(e.target.value)}
             />
 
-            <div className="d-flex justify-content-between">
+            <div className="d-flex justify-content-between flex-wrap gap-2">
               <div className="d-flex gap-2">
                 <button className="btn btn-outline-secondary btn-sm" type="button" onClick={() => setInfo("Attachment upload will be available soon.")}>Attach</button>
                 <button className="btn btn-outline-secondary btn-sm" type="button" onClick={() => setInfo("Tags added: #Community")}>Tag</button>
@@ -120,29 +120,26 @@ export function LearnerDiscussion() {
 
       {filteredPosts.map((post) => (
         <div key={post.id} className="card shadow-sm mb-3">
-          <div className="card-body d-flex gap-3">
+          <div className="card-body d-flex gap-3 overflow-hidden">
             <img
               src={post.avatar}
               alt={post.author}
-              className="rounded-circle"
+              className="rounded-circle flex-shrink-0"
               width="40"
               height="40"
             />
 
-            <div className="flex-grow-1">
-              <div className="d-flex justify-content-between mb-1">
+            <div className="flex-grow-1 min-width-0">
+              <div className="d-flex justify-content-between mb-1 flex-wrap gap-1">
                 <div className="d-flex align-items-center gap-2 flex-wrap">
                   <strong>{post.author}</strong>
-
                   <span className="badge bg-primary">{post.course}</span>
-
                   {post.pinned && (
                     <span className="text-warning small d-flex align-items-center gap-1">
                       <Pin size={14} /> Pinned
                     </span>
                   )}
                 </div>
-
                 <small className="text-muted">{post.time}</small>
               </div>
 
@@ -157,7 +154,7 @@ export function LearnerDiscussion() {
                 ))}
               </div>
 
-              <div className="d-flex align-items-center gap-4 border-top pt-3">
+              <div className="d-flex align-items-center gap-3 border-top pt-3 flex-wrap">
                 <button className="btn btn-link p-0 text-decoration-none" onClick={() => toggleLike(post.id)} type="button">
                   <ThumbsUp size={16} /> {post.likes + (likedPosts.includes(post.id) ? 1 : 0)}
                 </button>

@@ -4,7 +4,7 @@ import {
   Tooltip, ResponsiveContainer,
 } from "recharts";
 import { Users, BookOpen, Activity, TrendingUp } from "lucide-react";
-import { fetchAdminDashboardData } from "../../../../lib/api";
+import { fetchAdminDashboardData } from "../../../../api";
 
 export function AdminDashboards() {
   const [stats, setStats]               = useState([]);

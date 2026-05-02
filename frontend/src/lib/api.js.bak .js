@@ -625,6 +625,17 @@ export async function updateCourseFromForm(courseId, form, trainerId = null) {
   return { ok: true, data: { status: true, course: mapCourse(data) } };
 }
 
+
+export const updateUser = (id, body) =>
+  apiRequest(`users/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+export const deleteUser = (id) =>
+  apiRequest(`users/${id}`, { method: "DELETE" });
+
 export async function deleteCourseById(courseId) {
   const { ok, data } = await apiRequest(`courses/${courseId}`, {
     method: "DELETE",
@@ -1417,9 +1428,6 @@ export async function saveProfile(_role, accountId, form) {
   const fullName = `${form.firstName || ""} ${form.lastName || ""}`.trim();
 
   const formData = new FormData();
-
-  formData.append('_method', 'PUT');
-
   formData.append('name', fullName || "User");
   formData.append('email', form.email || "");
   formData.append('phone', form.phone || "");
@@ -1429,43 +1437,36 @@ export async function saveProfile(_role, accountId, form) {
   formData.append('twitter', form.twitter || "");
   formData.append('github', form.github || "");
 
-  if (form.image && form.image instanceof File) {
+  if (form.image instanceof File) {
     formData.append('image', form.image);
+  } else if (form.image && typeof form.image === 'string' && !form.image.startsWith('http')) {
+    const res = await fetch(form.image);
+    const blob = await res.blob();
+    formData.append('image', blob, 'profile.jpg');
   }
 
-  const { ok, data } = await apiRequest(`profile`, {
-    method: "POST", // POST + _method: PUT is more stable for uploads
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+
+  // ✅ Bonne URL : POST /api/profile avec _method=PUT (FormData ne supporte pas PUT natif)
+  formData.append('_method', 'PUT');
+
+  const response = await fetch(`/api/profile`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
     body: formData,
   });
 
-  if (!ok || !data) {
-    return {
-      ok,
-      data: { status: false, message: data?.message || "Save failed" },
-    };
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : {};
+
+  if (!response.ok) {
+    console.error(`HTTP ${response.status}:`, data);
+    return { data: { status: false, message: data.message || `Server error ${response.status}` } };
   }
 
-  const parts = String(data.name || "").trim().split(/\s+/);
-  const profile = {
-    firstName: parts[0] || "",
-    lastName: parts.slice(1).join(" "),
-    email: data.email || "",
-    phone: data.phone || "",
-    location: data.location || "",
-    bio: data.bio || "",
-    linkedin: data.linkedin || "",
-    twitter: data.twitter || "",
-    github: data.github || "",
-    image: data.image || "",
-  };
-
-  mergeStoredUser({
-    name: data.name,
-    email: data.email,
-    image: data.image,
-  });
-
-  return { ok: true, data: { status: true, profile } };
+  return { data };
 }
 
 export function mergeStoredUser(partial) {

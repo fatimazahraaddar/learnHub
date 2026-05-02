@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, Filter, Mail, MoreVertical } from "lucide-react";
-import { fetchTrainerStudentsData, getStoredUser } from "../../../../lib/api";
+import { fetchTrainerStudentsData, getStoredUser } from "../../../../api";
 
 const STATUS_COLORS = {
   Active: "success",

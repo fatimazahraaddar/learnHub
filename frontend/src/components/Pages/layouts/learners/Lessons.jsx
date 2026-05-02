@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Play, Lock, CheckCircle, ChevronRight, BookOpen } from "lucide-react";
-import { fetchLearnerLessonsData, getStoredUser } from "../../../../lib/api";
+import { fetchLearnerLessonsData, getStoredUser } from "../../../../api";
 
 export function LearnerLessons() {
   const [lessons, setLessons] = useState([]);
@@ -31,8 +31,12 @@ export function LearnerLessons() {
   }, [activeDiff, lessons]);
 
   const completedCount = lessons.filter((l) => l.completed).length;
-  const progress = lessons.length ? Math.round((completedCount / lessons.length) * 100) : 0;
-  const activeIndex = activeLesson ? lessons.findIndex((l) => l.id === activeLesson.id) : -1;
+  const progress = lessons.length
+    ? Math.round((completedCount / lessons.length) * 100)
+    : 0;
+  const activeIndex = activeLesson
+    ? lessons.findIndex((l) => l.id === activeLesson.id)
+    : -1;
 
   return (
     <div className="container my-4">
@@ -49,10 +53,15 @@ export function LearnerLessons() {
         ))}
 
         <div className="ms-auto d-flex align-items-center gap-2">
-          <small>{completedCount}/{lessons.length} completed</small>
+          <small>
+            {completedCount}/{lessons.length} completed
+          </small>
 
           <div className="progress" style={{ width: "120px", height: "6px" }}>
-            <div className="progress-bar bg-success" style={{ width: `${progress}%` }} />
+            <div
+              className="progress-bar bg-success"
+              style={{ width: `${progress}%` }}
+            />
           </div>
 
           <small className="text-success fw-bold">{progress}%</small>
@@ -64,7 +73,10 @@ export function LearnerLessons() {
           <div className="card shadow-sm">
             <div className="card-header fw-bold">Course Lessons</div>
 
-            <div className="list-group list-group-flush" style={{ maxHeight: "600px", overflowY: "auto" }}>
+            <div
+              className="list-group list-group-flush"
+              style={{ maxHeight: "600px", overflowY: "auto" }}
+            >
               {filtered.map((lesson) => {
                 const isActive = activeLesson?.id === lesson.id;
 
@@ -87,7 +99,9 @@ export function LearnerLessons() {
 
                       <div>
                         <div className="fw-semibold">{lesson.title}</div>
-                        <small className="text-muted">{lesson.difficulty} - {lesson.duration}</small>
+                        <small className="text-muted">
+                          {lesson.difficulty} - {lesson.duration}
+                        </small>
                       </div>
                     </div>
                   </button>
@@ -105,7 +119,13 @@ export function LearnerLessons() {
                   className="bg-dark text-white d-flex align-items-center justify-content-center"
                   style={{ height: "350px" }}
                 >
-                  <button className="btn btn-light rounded-circle" type="button" onClick={() => setPlayerInfo(`Playing: ${activeLesson.title}`)}>
+                  <button
+                    className="btn btn-light rounded-circle"
+                    type="button"
+                    onClick={() =>
+                      setPlayerInfo(`Playing: ${activeLesson.title}`)
+                    }
+                  >
                     <Play />
                   </button>
                 </div>
@@ -123,16 +143,24 @@ export function LearnerLessons() {
                       onClick={() => {
                         setLessons((prev) =>
                           prev.map((item) =>
-                            item.id === activeLesson.id ? { ...item, completed: true } : item
-                          )
+                            item.id === activeLesson.id
+                              ? { ...item, completed: true }
+                              : item,
+                          ),
                         );
-                        setActiveLesson((prev) => (prev ? { ...prev, completed: true } : prev));
+                        setActiveLesson((prev) =>
+                          prev ? { ...prev, completed: true } : prev,
+                        );
                       }}
                     >
                       {activeLesson.completed ? "Completed" : "Mark Complete"}
                     </button>
                   </div>
-                  {playerInfo ? <small className="text-muted d-block mt-2">{playerInfo}</small> : null}
+                  {playerInfo ? (
+                    <small className="text-muted d-block mt-2">
+                      {playerInfo}
+                    </small>
+                  ) : null}
 
                   <div className="d-flex mt-4">
                     <button
@@ -140,7 +168,8 @@ export function LearnerLessons() {
                       type="button"
                       disabled={activeIndex <= 0}
                       onClick={() => {
-                        if (activeIndex > 0) setActiveLesson(lessons[activeIndex - 1]);
+                        if (activeIndex > 0)
+                          setActiveLesson(lessons[activeIndex - 1]);
                       }}
                     >
                       Previous
@@ -148,9 +177,14 @@ export function LearnerLessons() {
                     <button
                       className="btn btn-primary ms-auto"
                       type="button"
-                      disabled={activeIndex < 0 || activeIndex >= lessons.length - 1}
+                      disabled={
+                        activeIndex < 0 || activeIndex >= lessons.length - 1
+                      }
                       onClick={() => {
-                        if (activeIndex >= 0 && activeIndex < lessons.length - 1) {
+                        if (
+                          activeIndex >= 0 &&
+                          activeIndex < lessons.length - 1
+                        ) {
                           setActiveLesson(lessons[activeIndex + 1]);
                         }
                       }}
@@ -164,7 +198,12 @@ export function LearnerLessons() {
           ) : (
             <div className="card text-center p-5">
               <BookOpen size={40} className="text-muted mx-auto mb-3" />
-              <p className="text-muted">Select a lesson to start learning</p>
+              <p
+                className="text-muted"
+                style={{ whiteSpace: "normal", wordBreak: "break-word" }}
+              >
+                Select a lesson to start learning
+              </p>
             </div>
           )}
         </div>

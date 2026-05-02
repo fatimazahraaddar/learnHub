@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, Filter, UserPlus, MoreVertical, Shield, Mail, X } from "lucide-react";
-import { fetchAdminUsersData } from "../../../../lib/api";
+import { fetchAdminUsersData } from "../../../../api";
 
 const ROLE_COLORS = {
   Learner: { bg: "#EBF4FF", color: "#4A90E2" },
@@ -14,6 +14,16 @@ const STATUS_COLORS = {
 };
 const DEFAULT_AVATAR =
   "https://images.unsplash.com/photo-1645664747204-31fee58898dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=100";
+
+// ✅ Clé du token unifiée
+const getToken = () => localStorage.getItem("auth_token");
+
+// ✅ Headers communs
+const authHeaders = () => ({
+  "Content-Type": "application/json",
+  "Accept": "application/json",
+  Authorization: `Bearer ${getToken()}`,
+});
 
 function UserModal({ user, onClose, onSaved }) {
   const isEdit = !!user;
@@ -44,23 +54,27 @@ function UserModal({ user, onClose, onSaved }) {
       ...(form.password ? { password: form.password, password_confirmation: form.password_confirmation } : {}),
     };
 
-  const token = localStorage.getItem("auth_token");
-    const res = await fetch(
-      isEdit ? `http://127.0.0.1:8000/api/users/${user.id}` : `http://127.0.0.1:8000/api/users`,
-      {
-        method: isEdit ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload),
-      }
-    );
-    const data = await res.json().catch(() => ({}));
-    setSaving(false);
+    try {
+      const res = await fetch(
+        isEdit ? `http://127.0.0.1:8000/api/users/${user.id}` : `http://127.0.0.1:8000/api/users`,
+        {
+          method: isEdit ? "PUT" : "POST",
+          headers: authHeaders(), // ✅ corrigé (était auth_token avant)
+          body: JSON.stringify(payload),
+        }
+      );
+      const data = await res.json().catch(() => ({}));
+      setSaving(false);
 
-    if (!res.ok) {
-      setError(data?.message || Object.values(data?.errors || {})?.[0]?.[0] || "Operation failed.");
-      return;
+      if (!res.ok) {
+        setError(data?.message || Object.values(data?.errors || {})?.[0]?.[0] || "Operation failed.");
+        return;
+      }
+      onSaved();
+    } catch {
+      setSaving(false);
+      setError("Network error. Please try again.");
     }
-    onSaved();
   };
 
   return (
@@ -80,11 +94,11 @@ function UserModal({ user, onClose, onSaved }) {
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="form-label fw-semibold small">Full Name *</label>
-            <input className="form-control" value={form.name} onChange={set("name")} placeholder="Jane Doe" />
+            <input className="form-control" value={form.name} onChange={set("name")} placeholder="Jane Doe" autoComplete="off" />
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold small">Email *</label>
-            <input type="email" className="form-control" value={form.email} onChange={set("email")} placeholder="jane@example.com" />
+            <input type="email" className="form-control" value={form.email} onChange={set("email")} placeholder="jane@example.com" autoComplete="off" />
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold small">Role</label>
@@ -172,16 +186,18 @@ export function AdminUsers() {
     return byRole.filter((u) => `${u.name} ${u.email} ${u.role}`.toLowerCase().includes(q));
   }, [users, search, roleFilter]);
 
-  const token = localStorage.getItem("token");
-
   const handleDelete = async (user) => {
     if (!window.confirm(`Delete ${user.name}? This cannot be undone.`)) return;
-    const res = await fetch(`http://127.0.0.1:8000/api/users/${user.id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) { setUsers((prev) => prev.filter((u) => u.id !== user.id)); showToast(`${user.name} deleted.`); }
-    else showToast("Delete failed — check permissions.");
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/users/${user.id}`, {
+        method: "DELETE",
+        headers: authHeaders(), // ✅ corrigé
+      });
+      if (res.ok) { setUsers((prev) => prev.filter((u) => u.id !== user.id)); showToast(`${user.name} deleted.`); }
+      else showToast("Delete failed — check permissions.");
+    } catch {
+      showToast("Network error during delete.");
+    }
     setOpenMenuId(null);
   };
 
@@ -195,13 +211,17 @@ export function AdminUsers() {
   const handleChangeRole = async (user) => {
     const order    = ["Learner", "Trainer", "Admin"];
     const nextRole = order[(order.indexOf(user.role) + 1) % order.length];
-    const res = await fetch(`http://127.0.0.1:8000/api/users/${user.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ role: nextRole.toLowerCase() }),
-    });
-    if (res.ok) { setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, role: nextRole } : u))); showToast(`${user.name} is now ${nextRole}.`); }
-    else showToast("Role change failed.");
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/api/users/${user.id}`, {
+        method: "PUT",
+        headers: authHeaders(), // ✅ corrigé
+        body: JSON.stringify({ role: nextRole.toLowerCase() }),
+      });
+      if (res.ok) { setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, role: nextRole } : u))); showToast(`${user.name} is now ${nextRole}.`); }
+      else showToast("Role change failed.");
+    } catch {
+      showToast("Network error during role change.");
+    }
     setOpenMenuId(null);
   };
 

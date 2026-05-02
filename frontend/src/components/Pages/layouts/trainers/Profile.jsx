@@ -4,15 +4,15 @@ import {
 } from "lucide-react";
 import {
   fetchProfile, getStoredUser, getUserDisplayData, mergeStoredUser, saveProfile, apiRequest,
-} from "../../../../lib/api";
-
+} from "../../../../api";
+ 
 export function TrainerProfile() {
   const imageInputRef = useRef(null);
   const user = getUserDisplayData();
   const storedUser = getStoredUser();
   const accountId = Number(storedUser?.id || 0);
   const role = String(storedUser?.role || "trainer");
-
+ 
   const [form, setForm] = useState({
     firstName: user.firstName || "Trainer",
     lastName:  user.lastName  || "",
@@ -24,23 +24,21 @@ export function TrainerProfile() {
     twitter:   "",
     github:    "",
     image:     user.image || "",
+    image_file: null,
   });
-
+ 
   const [stats, setStats] = useState({ courses: 0, certificates: 0, hours: "0h", score: "0%" });
-  const [skills, setSkills] = useState([]);
   const [saved, setSaved] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
-
+ 
   const handleChange = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
-
+ 
   const handleImageFile = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => handleChange("image", typeof reader.result === "string" ? reader.result : "");
-    reader.readAsDataURL(file);
+    setForm((prev) => ({ ...prev, image_file: file, image: URL.createObjectURL(file) }));
   };
-
+ 
   useEffect(() => {
     let mounted = true;
     const loadProfile = async () => {
@@ -52,7 +50,7 @@ export function TrainerProfile() {
     loadProfile();
     return () => { mounted = false; };
   }, [accountId, role]);
-
+ 
   useEffect(() => {
     if (!accountId) return;
     const loadStats = async () => {
@@ -64,10 +62,10 @@ export function TrainerProfile() {
         : Array.isArray(coursesRes.data?.data) ? coursesRes.data.data : [];
       const certs = Array.isArray(certsRes.data) ? certsRes.data
         : Array.isArray(certsRes.data?.data) ? certsRes.data.data : [];
-
+ 
       const trainerCourses = courses.filter(c => Number(c.trainer_id) === accountId);
       const trainerCerts   = certs.filter(c => Number(c.trainer_id) === accountId);
-
+ 
       setStats({
         courses:      trainerCourses.length,
         certificates: trainerCerts.length,
@@ -77,31 +75,23 @@ export function TrainerProfile() {
     };
     loadStats();
   }, [accountId]);
-
-  useEffect(() => {
-    if (!accountId) return;
-    const loadSkills = async () => {
-      const res = await apiRequest("skills");
-      const data = Array.isArray(res.data) ? res.data
-        : Array.isArray(res.data?.data) ? res.data.data : [];
-      const trainerSkills = data.filter(s => Number(s.trainer_id) === accountId);
-      setSkills(trainerSkills.map(s => s.name ?? s));
-    };
-    loadSkills();
-  }, [accountId]);
-
+ 
   const handleSave = async () => {
     if (!accountId) { setStatusMessage("Session user missing."); return; }
-    const { data } = await saveProfile(role, accountId, form);
+    const formToSave = { ...form };
+    if (form.image_file) {
+      formToSave.image = form.image_file;
+    }
+    const { data } = await saveProfile(role, accountId, formToSave);
     if (!data.status) { setStatusMessage(data.message || "Save failed"); return; }
-    if (data.profile) setForm((prev) => ({ ...prev, ...data.profile }));
+    if (data.profile) setForm((prev) => ({ ...prev, ...data.profile, image_file: null }));
     const fullName = `${form.firstName} ${form.lastName}`.trim();
     mergeStoredUser({ name: fullName, email: form.email, image: form.image });
     setSaved(true);
     setStatusMessage("Profile updated successfully.");
     setTimeout(() => setSaved(false), 1600);
   };
-
+ 
   return (
     <div className="container my-4">
       <div className="card shadow-sm mb-4">
@@ -113,6 +103,7 @@ export function TrainerProfile() {
                 <img
                   src={form.image} width="100" height="100"
                   className="rounded-circle border border-3" alt="profile"
+                  style={{ objectFit: "cover" }}
                   onError={(e) => { e.target.style.display = "none"; }}
                 />
               ) : (
@@ -135,7 +126,7 @@ export function TrainerProfile() {
               {statusMessage && <p className="small text-muted mb-0 mt-2">{statusMessage}</p>}
             </div>
           </div>
-
+ 
           <div className="mt-3">
             <h4>{form.firstName} {form.lastName}</h4>
             <p className="text-muted">Course Trainer - {form.location || "No location set"}</p>
@@ -148,7 +139,7 @@ export function TrainerProfile() {
           </div>
         </div>
       </div>
-
+ 
       <div className="row">
         <div className="col-lg-8">
           <div className="card mb-4">
@@ -169,10 +160,10 @@ export function TrainerProfile() {
                   </div>
                 ))}
               </div>
-
+ 
               <div className="mb-3">
                 <label className="form-label">Profile Image URL</label>
-                <input className="form-control" value={form.image}
+                <input className="form-control" value={typeof form.image === "string" ? form.image : ""}
                   onChange={(e) => handleChange("image", e.target.value)} placeholder="https://..." />
               </div>
               <div className="mb-3">
@@ -187,7 +178,7 @@ export function TrainerProfile() {
               </div>
             </div>
           </div>
-
+ 
           <div className="card">
             <div className="card-body">
               <h5 className="mb-3">Social Links</h5>
@@ -208,7 +199,7 @@ export function TrainerProfile() {
             </div>
           </div>
         </div>
-
+ 
         <div className="col-lg-4">
           <div className="card mb-4">
             <div className="card-body">
@@ -232,22 +223,7 @@ export function TrainerProfile() {
               </div>
             </div>
           </div>
-
-          <div className="card mb-4">
-            <div className="card-body">
-              <h5 className="mb-3">Skills</h5>
-              <div className="d-flex flex-wrap gap-2">
-                {skills.length > 0 ? (
-                  skills.map((skill) => (
-                    <span key={skill} className="badge bg-primary">{skill}</span>
-                  ))
-                ) : (
-                  <p className="text-muted small mb-0">No skills added yet.</p>
-                )}
-              </div>
-            </div>
-          </div>
-
+ 
           <div className="card text-white" style={{ background: "linear-gradient(135deg,#4A90E2,#7F3FBF)" }}>
             <div className="card-body">
               <h6>7-Day Streak</h6>

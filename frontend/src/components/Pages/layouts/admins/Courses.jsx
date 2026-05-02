@@ -6,7 +6,7 @@ import {
   uploadImageFile,
   updateCourseFromForm,
   createCourseFromForm,
-} from "../../../../lib/api";
+} from "../../../../api";
 import { resolveCourseImage } from "../../../../lib/courseImage";
 import { ActionToast } from "../../ActionToast";
 
@@ -25,7 +25,7 @@ export function AdminCourses() {
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState({ show: false, text: "", variant: "info" });
   const [showEditor, setShowEditor] = useState(false);
-  const [editorMode, setEditorMode] = useState("edit"); // "edit" | "add"
+  const [editorMode, setEditorMode] = useState("edit");
   const [form, setForm] = useState(EMPTY_FORM);
   const [withImageOnly, setWithImageOnly] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -35,45 +35,35 @@ export function AdminCourses() {
   };
 
   const imagePreview = useMemo(() => {
-    // 1. Ila khtariti File mn l-PC
     if (form.image_file instanceof File) {
       return URL.createObjectURL(form.image_file);
     }
-
-    // 2. Ila knti f "Edit" w 3ndek tswira 9dima f l-database (path)
-    if (form.image_url && !form.image_url.startsWith('http')) {
-      // Hna khass t-zid l-base URL dyal storage dyalk
+    if (form.image_url && !form.image_url.startsWith("http")) {
       return `http://127.0.0.1:8000/storage/${form.image_url}`;
     }
-
-    // 3. Ila knti dakhalti URL direct (https://...)
     if (form.image_url) {
       return form.image_url;
     }
-
-    // 4. Ila makhdawch hado kamlin, rje3 l-default
     return resolveCourseImage(null, form.title);
   }, [form.image_file, form.image_url, form.title]);
 
   useEffect(() => {
     let cancelled = false;
-
     fetchCourses().then(({ ok, data }) => {
       if (cancelled) return;
-
       if (ok && data.courses) {
-        // Hna khassna nakhou data.courses hit api.js kiy-wrapper l-array f had l-key
         setCourses(data.courses);
       } else {
         showToast(data?.message || "Failed to load courses", "danger");
       }
     });
-
     return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
-    return () => { if (form.image_file) URL.revokeObjectURL(imagePreview); };
+    return () => {
+      if (form.image_file) URL.revokeObjectURL(imagePreview);
+    };
   }, [form.image_file, imagePreview]);
 
   useEffect(() => {
@@ -94,27 +84,30 @@ export function AdminCourses() {
     setForm(EMPTY_FORM);
     setEditorMode("add");
     setShowEditor(true);
+    window.scrollTo({ top: 0, behavior: "smooth" }); // ← ajoutez cette ligne
   };
 
-  const openEdit = (course) => {
-    setForm({
-      id: String(course.id),
-      title: course.title || "",
-      category: course.category || "Development",
-      duration: course.duration || "",
-      description: course.description || "",
-      image_url: course.image || "",
-      image_file: null,
-    });
-    setEditorMode("edit");
-    setShowEditor(true);
-  };
+const openEdit = (course) => {
+  console.log("course:", course);
+  setForm({
+    id: String(course.id),
+    title: course.title || "",
+    category: course.category || "Development",
+    duration: course.duration || "",
+    description: course.description || "",
+    image_url: course.image || "",
+    image_file: null,
+  });
+  setEditorMode("edit");
+  setShowEditor(true);
+  window.scrollTo({ top: 0, behavior: "smooth" }); // ← ajoutez cette ligne
+};
 
   const handleSave = async (e) => {
     e.preventDefault();
 
     if (!form.title || !form.description) {
-      showToast("Please fill valid title, description and price", "danger");
+      showToast("Please fill valid title and description", "danger");
       return;
     }
 
@@ -132,46 +125,50 @@ export function AdminCourses() {
     }
 
     if (editorMode === "add") {
-      const { ok, data: refreshed } = await fetchCourses();
-      if (ok && refreshed.courses) {
-        setCourses(refreshed.courses);
-      }
+      const { ok, data } = await createCourseFromForm(finalForm, null);
       setSaving(false);
-      if (!ok || !data.status) {
+      if (!ok || !data?.status) {
         showToast(data?.message || "Create failed", "danger");
         return;
       }
       showToast("Course created successfully!", "success");
     } else {
-      const { data } = await updateCourseFromForm(form.id, finalForm, null);
+      const { ok, data } = await updateCourseFromForm(form.id, finalForm, null);
       setSaving(false);
-      if (!data.status) {
+      if (!ok || !data?.status) {
         showToast(data?.message || "Update failed", "danger");
         return;
       }
       showToast("Course updated successfully", "success");
     }
 
-    // Remplace loadCourses()
     const { ok, data: refreshed } = await fetchCourses();
-    if (ok && refreshed.courses) {
-      setCourses(refreshed.courses);
-    }
-    if (ok && Array.isArray(refreshed)) setCourses(refreshed);
+    if (ok && refreshed?.courses) setCourses(refreshed.courses);
 
     setShowEditor(false);
     setForm(EMPTY_FORM);
   };
 
+  useEffect(() => {
+  console.log("showEditor:", showEditor, "editorMode:", editorMode);
+}, [showEditor, editorMode]);
+
+
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this course?")) return;
     const { data } = await deleteCourseById(id);
-    if (!data.status) { showToast(data?.message || "Delete failed", "danger"); return; }
+    if (!data.status) {
+      showToast(data?.message || "Delete failed", "danger");
+      return;
+    }
     setCourses((prev) => prev.filter((c) => Number(c.id) !== Number(id)));
     showToast("Course deleted", "success");
   };
 
-  const closeEditor = () => { setShowEditor(false); setForm(EMPTY_FORM); };
+  const closeEditor = () => {
+    setShowEditor(false);
+    setForm(EMPTY_FORM);
+  };
 
   return (
     <div className="container my-4">
@@ -269,7 +266,12 @@ export function AdminCourses() {
               <div className="mt-3 d-flex gap-2">
                 <button
                   className="btn text-white fw-semibold"
-                  style={{ background: editorMode === "add" ? "linear-gradient(135deg,#4A90E2,#7F3FBF)" : "#FFC107" }}
+                  style={{
+                    background:
+                      editorMode === "add"
+                        ? "linear-gradient(135deg,#4A90E2,#7F3FBF)"
+                        : "#FFC107",
+                  }}
                   type="submit"
                   disabled={saving}
                 >
@@ -373,7 +375,6 @@ export function AdminCourses() {
                       {course.category || "General"}
                     </span>
                   </td>
-
                   <td className="text-muted">{course.duration || "Self paced"}</td>
                   <td>
                     <span className="badge" style={{ backgroundColor: "#F0FFF4", color: "#28A745" }}>

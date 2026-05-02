@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, Shield, Mail, Phone, MapPin, Save, Linkedin, Twitter, Github, Loader2 } from "lucide-react";
-import { fetchProfile, getUserDisplayData, mergeStoredUser, saveProfile } from "../../../../lib/api";
-
+import { fetchProfile, getUserDisplayData, saveProfile } from "../../../../api";
+ 
 const INFO_FIELDS = [
   { label: "First Name", key: "firstName", Icon: Shield },
   { label: "Last Name", key: "lastName", Icon: Shield },
@@ -9,13 +9,13 @@ const INFO_FIELDS = [
   { label: "Phone", key: "phone", Icon: Phone },
   { label: "Location", key: "location", Icon: MapPin },
 ];
-
+ 
 const SOCIAL_FIELDS = [
   { key: "linkedin", Icon: Linkedin, placeholder: "LinkedIn URL" },
   { key: "twitter", Icon: Twitter, placeholder: "Twitter / X URL" },
   { key: "github", Icon: Github, placeholder: "GitHub URL" },
 ];
-
+ 
 const EMPTY_FORM = {
   firstName: "",
   lastName: "",
@@ -28,19 +28,21 @@ const EMPTY_FORM = {
   twitter: "",
   github: "",
   image: "",
+  image_file: null,
+  imagePreview: null,
 };
-
+ 
 export function AdminProfile() {
   const imageInputRef = useRef(null);
   const user = getUserDisplayData();
-
+ 
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
-
+ 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -57,30 +59,25 @@ export function AdminProfile() {
     load();
     return () => { cancelled = true; };
   }, []);
-
+ 
   const handleChange = (key, value) =>
     setForm((prev) => ({ ...prev, [key]: value }));
-
+ 
   const handleImageFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setForm(prev => ({ ...prev, imageFile: file }));
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setForm(prev => ({ ...prev, imagePreview: reader.result }));
-      }
-    };
-    reader.readAsDataURL(file);
+    setForm(prev => ({
+      ...prev,
+      image_file: file,
+      imagePreview: URL.createObjectURL(file),
+    }));
   };
-
+ 
   const handleSave = async () => {
     setSaving(true);
     setError("");
     setStatusMessage("");
-
+ 
     const submissionData = {
       firstName: form.firstName,
       lastName: form.lastName,
@@ -91,59 +88,63 @@ export function AdminProfile() {
       linkedin: form.linkedin,
       twitter: form.twitter,
       github: form.github,
-      image: form.imageFile instanceof File ? form.imageFile : null
+      image: form.image_file instanceof File ? form.image_file : form.image,
     };
-
-    const { ok, data } = await saveProfile(null, null, submissionData);
-
+ 
+    const { data } = await saveProfile("admin", null, submissionData);
+ 
     setSaving(false);
-
-    if (!ok || !data?.status) {
+ 
+    if (!data?.status) {
       setError(data?.message || "Validation Error. Check your data.");
       return;
     }
-
+ 
     if (data.profile) {
       setForm((prev) => ({
         ...prev,
         ...data.profile,
         imagePreview: null,
-        imageFile: null
+        image_file: null,
       }));
     }
-
+ 
     setStatusMessage("Profile updated successfully!");
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
+ 
   const initials = (form.firstName || user.firstName || "A").charAt(0).toUpperCase();
   const fullName = `${form.firstName} ${form.lastName}`.trim() || user.fullName;
-
+  const displayImage = form.imagePreview || (form.image ? `http://localhost:8000/storage/${form.image}` : null);
+ 
   if (loading) return (
     <div className="text-center py-5">
       <Loader2 size={32} className="text-primary" />
       <p className="text-muted mt-2">Loading profile...</p>
     </div>
   );
-
+ 
   return (
     <div className="container my-4">
-
-      {error && <div className="alert alert-danger  py-2">{error}</div>}
+ 
+      {error && <div className="alert alert-danger py-2">{error}</div>}
       {statusMessage && <div className="alert alert-success py-2">{statusMessage}</div>}
-
+ 
       <div className="card shadow-sm mb-4">
         <div style={{ height: 130, background: "linear-gradient(135deg,#FF7A00,#FF9A40)" }} />
         <div className="card-body">
           <div className="d-flex justify-content-between align-items-end">
-
+ 
             <div className="position-relative" style={{ marginTop: -50 }}>
-              {(form.imagePreview || form.image) ? (
+              {displayImage ? (
                 <img
-                  src={`http://localhost:8000/storage/${form.image ?? form.imagePreview}`}
+                  src={displayImage}
                   width={100} height={100}
-                  className="rounded-circle border border-3 border-white object-fit-cover"
+                  className="rounded-circle border border-3 border-white"
+                  style={{ objectFit: "cover" }}
                   alt="profile"
+                  onError={(e) => { e.target.style.display = "none"; }}
                 />
               ) : (
                 <div
@@ -161,7 +162,7 @@ export function AdminProfile() {
                 <Camera size={14} />
               </button>
             </div>
-
+ 
             <button
               className="btn btn-warning text-white d-flex align-items-center gap-1"
               onClick={handleSave}
@@ -174,7 +175,7 @@ export function AdminProfile() {
               }
             </button>
           </div>
-
+ 
           <div className="mt-3">
             <h4>{fullName}</h4>
             <p className="text-muted mb-1">{form.roleTitle}</p>
@@ -182,10 +183,10 @@ export function AdminProfile() {
           </div>
         </div>
       </div>
-
+ 
       <div className="row">
         <div className="col-lg-8">
-
+ 
           <div className="card mb-4">
             <div className="card-body">
               <h5 className="mb-3">Admin Information</h5>
@@ -211,7 +212,7 @@ export function AdminProfile() {
                   />
                 </div>
               </div>
-
+ 
               <div className="mb-3">
                 <label className="form-label">Bio</label>
                 <textarea
@@ -221,7 +222,7 @@ export function AdminProfile() {
                   onChange={(e) => handleChange("bio", e.target.value)}
                 />
               </div>
-
+ 
               <div className="mb-3">
                 <label className="form-label">Profile Image URL</label>
                 <input
@@ -231,7 +232,7 @@ export function AdminProfile() {
                   placeholder="https://..."
                 />
               </div>
-
+ 
               <div className="mb-0">
                 <label className="form-label">Or Upload Image</label>
                 <input
@@ -244,7 +245,7 @@ export function AdminProfile() {
               </div>
             </div>
           </div>
-
+ 
           <div className="card">
             <div className="card-body">
               <h5 className="mb-3">Social Links</h5>
@@ -261,7 +262,7 @@ export function AdminProfile() {
               ))}
             </div>
           </div>
-
+ 
         </div>
       </div>
     </div>

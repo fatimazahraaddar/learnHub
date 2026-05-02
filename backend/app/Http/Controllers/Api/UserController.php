@@ -63,37 +63,38 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request): JsonResponse
-    {
-        $user = User::findOrFail(Auth::id());
+   public function update(Request $request, User $user): JsonResponse
+{
+    // ❌ Supprimez cette ligne :
+    // $user = User::findOrFail(Auth::id());
 
-        $validated = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'phone'    => ['nullable', 'string'],
-            'location' => ['nullable', 'string'],
-            'bio'      => ['nullable', 'string'],
-            'linkedin' => ['nullable', 'url'],
-            'twitter'  => ['nullable', 'url'],
-            'github'   => ['nullable', 'url'],
-            'image'    => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-        ]);
+    $validated = $request->validate([
+        'name'     => ['required', 'string', 'max:255'],
+        'email'    => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+        'role'     => ['nullable', Rule::in(['admin', 'trainer', 'learner'])],
+        'phone'    => ['nullable', 'string'],
+        'location' => ['nullable', 'string'],
+        'bio'      => ['nullable', 'string'],
+        'linkedin' => ['nullable', 'url'],
+        'twitter'  => ['nullable', 'url'],
+        'github'   => ['nullable', 'url'],
+        'image'    => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+    ]);
 
-        if ($request->hasFile('image')) {
-            if ($user->image) {
-                Storage::disk('public')->delete($user->image);
-            }
-            $validated['image'] = $request->file('image')->store('profiles', 'public');
+    if ($request->hasFile('image')) {
+        if ($user->image) {
+            Storage::disk('public')->delete($user->image);
         }
-
-        $user->update($validated);
-
-        return response()->json([
-            'status' => true,
-            'profile' => $user->refresh()
-        ]);
+        $validated['image'] = $request->file('image')->store('profiles', 'public');
     }
 
+    $user->update($validated);
+
+    return response()->json([
+        'status' => true,
+        'profile' => $user->refresh()
+    ]);
+}
     /**
      * Remove the specified resource from storage.
      */

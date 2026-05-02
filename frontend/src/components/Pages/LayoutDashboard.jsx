@@ -21,7 +21,7 @@ import {
   Globe,
 } from "lucide-react";
 import { useLocation } from "react-router";
-import { getDashboardRouteByRole, getStoredUser } from "../../lib/api";
+import { getDashboardRouteByRole, getStoredUser } from "../../api";
 
 const LEARNER_ITEMS = [
   {

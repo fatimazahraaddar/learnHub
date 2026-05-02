@@ -13,7 +13,7 @@ import {
   getDashboardRouteByRole,
   getStoredUser,
   logoutUser,
-} from "../../lib/api";
+} from "../../api";
 
 const PRIMARY = "#1E3A5F";
 const ACCENT = "#10B981";
