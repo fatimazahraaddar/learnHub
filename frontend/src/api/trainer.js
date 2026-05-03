@@ -81,10 +81,9 @@ export async function fetchTrainerOverviewData(trainerId = null) {
       name: e.user?.name || "Unnamed",
       course: e.course?.title || "Unknown course",
       enrolled: formatDate(e.enrolled_at || e.created_at),
-      progress: Number(e.progress || 0),
-      avatar:
-        e.user?.image ||
-        "https://images.unsplash.com/photo-1758691736975-9f7f643d178e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=100",
+      progress: Number(e.progress || e.pivot?.progress || 0),
+      avatar: e.user?.avatar_url || e.user?.image ||
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(e.user?.name || "U")}&background=4A90E2&color=fff&size=64`,
     }));
 
   return {
@@ -123,13 +122,17 @@ export async function fetchTrainerStudentsData(trainerId = null) {
   const allEnrollments = asArray(enrollmentsRes.data);
 
   const enrollments = allEnrollments.filter((e) => {
+    // Exclure le trainer lui-même
+    if (Number(e.user_id) === Number(trainerId)) return false;
     if (!trainerId) return true;
     const course = courses.find((c) => Number(c.id) === Number(e.course_id));
-    return Number(course?.trainer_id) === Number(trainerId);
+    if (!course?.trainer_id) return false;
+    return Number(course.trainer_id) === Number(trainerId);
   });
 
   const students = enrollments.map((e) => {
-    const progress = Number(e.progress || 0);
+    // progress peut être à la racine ou dans pivot selon le backend
+    const progress = Number(e.progress ?? e.pivot?.progress ?? 0);
     const status =
       progress === 100 ? "Completed" : progress < 30 ? "At Risk" : "Active";
 
@@ -142,8 +145,9 @@ export async function fetchTrainerStudentsData(trainerId = null) {
       joined: formatDate(e.enrolled_at || e.created_at),
       status,
       avatar:
+        e.user?.avatar_url ||
         e.user?.image ||
-        "https://images.unsplash.com/photo-1645664747204-31fee58898dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=100",
+        `https://ui-avatars.com/api/?name=${encodeURIComponent(e.user?.name || "U")}&background=4A90E2&color=fff&size=64`,
     };
   });
 

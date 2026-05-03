@@ -38,7 +38,7 @@ class EnrollmentController extends Controller
             $query->where('course_id', $request->integer('course_id'));
         }
 
-        return response()->json($query->latest()->paginate(20));
+        return response()->json($query->latest()->get());
     }
 
     /**

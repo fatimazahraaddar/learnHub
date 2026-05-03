@@ -20,11 +20,17 @@ use App\Http\Controllers\Api\UserSubscriptionController;
 use App\Http\Controllers\Api\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 
+// Routes publiques
 Route::post('auth/register', [AuthController::class, 'register']);
 Route::post('auth/login', [AuthController::class, 'login']);
 Route::post('contact', [ContactController::class, 'store']);
 
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
+
+// ✅ Spécifiques AVANT apiResource pour éviter les conflits
+Route::get('courses/{course}/lessons', [CourseController::class, 'getLessons']);
+Route::get('courses/{course}/quizzes', [CourseController::class, 'getQuizzes']);
+
 Route::apiResource('courses', CourseController::class)->only(['index', 'show']);
 Route::apiResource('blog-posts', BlogPostController::class)->only(['index', 'show']);
 Route::apiResource('testimonials', TestimonialController::class)->only(['index', 'show']);
@@ -38,12 +44,12 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('auth/logout-all', [AuthController::class, 'logoutAll']);
     Route::post('uploads/images', [UploadController::class, 'image']);
 
-    // ── Profile personnel (accessible à tous les rôles) ──
     Route::get('profile', [UserController::class, 'profile']);
     Route::put('profile', [UserController::class, 'updateProfile']);
 
     Route::apiResource('enrollments', EnrollmentController::class);
     Route::apiResource('messages', MessageController::class);
+    Route::post('blog-posts', [BlogPostController::class, 'store']);
     Route::apiResource('certificates', CertificateController::class)->only(['index', 'show']);
     Route::put('/certificates/{id}', [CertificateController::class, 'update']);
 
@@ -53,11 +59,15 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::put('platform-settings', [PlatformSettingController::class, 'update']);
     });
 
-
     Route::middleware('role:admin,trainer')->group(function (): void {
         Route::apiResource('categories', CategoryController::class)->only(['store', 'update', 'destroy']);
-         Route::get('analytics/trainer', [AnalyticsController::class, 'trainer']); // ✅ ajoute
+        Route::get('analytics/trainer', [AnalyticsController::class, 'trainer']);
         Route::apiResource('courses', CourseController::class)->only(['store', 'update', 'destroy']);
+
+        // ✅ Save lessons & quizzes protégés (admin/trainer seulement)
+        Route::post('courses/{course}/lessons', [CourseController::class, 'saveLessons']);
+        Route::post('courses/{course}/quizzes', [CourseController::class, 'saveQuizzes']);
+
         Route::apiResource('modules', ModuleController::class);
         Route::apiResource('lessons', LessonController::class);
         Route::apiResource('blog-posts', BlogPostController::class)->only(['store', 'update', 'destroy']);

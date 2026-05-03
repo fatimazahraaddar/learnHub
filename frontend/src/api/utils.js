@@ -136,6 +136,7 @@ export function mapBlogPost(item) {
   };
 }
 
+
 export function mapSubscriptionPlan(item) {
   return {
     id: Number(item?.id || 0),

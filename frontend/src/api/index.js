@@ -60,6 +60,7 @@ export {
   fetchLearnerCourses,
   fetchLearnerCertificates,
   fetchLearnerLessonsData,
+  updateEnrollmentProgress,
 } from './learner';
 
 export {
